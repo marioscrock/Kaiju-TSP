@@ -3,7 +3,7 @@
   <groupId>polimi</groupId>
   <artifactId>jaeger</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>jaeger-java-agent</name>
+  <name>jaeger-java-collector</name>
   <build>
     <plugins>
        <plugin>
