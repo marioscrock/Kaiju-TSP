@@ -6,15 +6,15 @@
   <name>jaeger-java-agent</name>
   <build>
     <plugins>
-        <plugin>
-            <groupId>org.apache.thrift.tools</groupId>
-            <artifactId>maven-thrift-plugin</artifactId>
-            <version>0.1.11</version>
-            <configuration>
-                <thriftExecutable>D:\thrift\thrift-0.9.3.exe</thriftExecutable>
-            </configuration>
-        </plugin>
-    	</plugins>
+       <plugin>
+         <groupId>org.apache.thrift.tools</groupId>
+         <artifactId>maven-thrift-plugin</artifactId>
+         <version>0.1.11</version>
+         <configuration>
+            <thriftExecutable>D:\thrift\thrift-0.9.3.exe</thriftExecutable>
+         </configuration>
+       </plugin>
+    </plugins>
   </build>
   <dependencies>
     <dependency>
