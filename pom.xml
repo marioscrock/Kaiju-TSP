@@ -4,18 +4,6 @@
   <artifactId>jaeger</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>jaeger-java-collector</name>
-  <build>
-    <plugins>
-       <plugin>
-         <groupId>org.apache.thrift.tools</groupId>
-         <artifactId>maven-thrift-plugin</artifactId>
-         <version>0.1.11</version>
-         <configuration>
-            <thriftExecutable>D:\thrift\thrift-0.9.3.exe</thriftExecutable>
-         </configuration>
-       </plugin>
-    </plugins>
-  </build>
   <dependencies>
     <dependency>
       <groupId>org.apache.thrift</groupId>
