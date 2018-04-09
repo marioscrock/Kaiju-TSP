@@ -37,6 +37,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	public List<BatchSubmitResponse> submitBatches(List<Batch> batches) throws TException {
 		
 		System.out.println("Processing batch number: " + numbBatches + "\nBatch size: " + batches.size());
+		numbBatches += batches.size();
 		
 		JSONObject obj = new JSONObject();
 		
@@ -139,12 +140,14 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			
 			JSONObject jsonSpan = new JSONObject();
 			
-			//ATTENTION: in DB no used high-low but hex representation
-			String id = Long.toString(span.getTraceIdHigh()) + Long.toString(span.getTraceIdLow()) + Long.toString(span.getSpanId());
+			//ATTENTION: convert in HEX like DB
+			String traceIdHex = traceIdToHex(span.getTraceIdHigh(), span.getTraceIdLow());
+			String spanIdHex = Long.toHexString(span.getSpanId());
+			String id = traceIdHex + spanIdHex;
 			
 			//Data properties
 			jsonSpan.put("@id", PREFIX_SPAN + id);
-			jsonSpan.put("spanId", span.getSpanId());
+			jsonSpan.put("spanId", spanIdHex);
 			jsonSpan.put("operationName", span.getOperationName());
 			jsonSpan.put("startTime", span.getStartTime());
 			jsonSpan.put("duration", span.getDuration());
@@ -152,7 +155,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			
 			//Object properties
 			jsonSpan.put("spanOfProcess", processId);
-			jsonSpan.put("spanOfTrace", PREFIX_TRACE + span.getTraceIdHigh() + span.getTraceIdLow());
+			jsonSpan.put("spanOfTrace", PREFIX_TRACE + traceIdHex);
 			
 			//TAG
 			List<Tag> tags = span.getTags();
@@ -177,12 +180,19 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 		
 	}
 	
+	private String traceIdToHex(Long traceIdHigh, Long traceIdLow) {
+		
+		return Long.toHexString(Long.valueOf((Long.toString(traceIdHigh) 
+				+ Long.toString(traceIdLow))).longValue());
+		
+	}
+	
 	@SuppressWarnings("unchecked")
 	private void refsToJson(List<SpanRef> refs, JSONObject jsonSpan) {
 		
 		for(SpanRef ref : refs) {
 			
-			String id = Long.toString(ref.getTraceIdHigh()) + Long.toString(ref.getTraceIdLow()) + Long.toString(ref.getSpanId());
+			String id = traceIdToHex(ref.getTraceIdHigh(), ref.getTraceIdLow()) + Long.toString(ref.getSpanId());
 			
 			if (ref.refType.equals(SpanRefType.CHILD_OF)) {
 				jsonSpan.put("childOf", PREFIX_SPAN + id);
