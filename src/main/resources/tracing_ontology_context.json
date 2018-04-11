@@ -1,0 +1,134 @@
+{
+  "@context": {
+    "hasSpan": {
+      "@id": "http://polimi.deib/tracing#hasSpan"
+      , "@type": "@id"
+    }
+    , "spanOf": {
+      "@id": "http://polimi.deib/tracing#spanOf"
+      , "@type": "@id"
+    }
+    , "spanOfProcess": {
+      "@id": "http://polimi.deib/tracing#spanOfProcess"
+      , "@type": "@id"
+    }
+    , "stringVal": {
+      "@id": "http://polimi.deib/tracing#stringVal"
+      , "@type": "http://www.w3.org/2001/XMLSchema#string"
+    }
+    , "Log": {
+      "@id": "http://polimi.deib/tracing#Log"
+    }
+    , "hasTag": {
+      "@id": "http://polimi.deib/tracing#hasTag"
+      , "@type": "@id"
+    }
+    , "Trace": {
+      "@id": "http://polimi.deib/tracing#Trace"
+    }
+    , "timestamp": {
+      "@id": "http://polimi.deib/tracing#timestamp"
+      , "@type": "http://www.w3.org/2001/XMLSchema#integer"
+    }
+    , "doubleVal": {
+      "@id": "http://polimi.deib/tracing#doubleVal"
+      , "@type": "http://www.w3.org/2001/XMLSchema#double"
+    }
+    , "flags": {
+      "@id": "http://polimi.deib/tracing#flags"
+      , "@type": "http://www.w3.org/2001/XMLSchema#int"
+    }
+    , "spanId": {
+      "@id": "http://polimi.deib/tracing#spanId"
+      , "@type": "http://www.w3.org/2001/XMLSchema#string"
+    }
+    , "tagValue": {
+      "@id": "http://polimi.deib/tracing#tagValue"
+    }
+    , "operationName": {
+      "@id": "http://polimi.deib/tracing#operationName"
+      , "@type": "http://www.w3.org/2001/XMLSchema#string"
+    }
+    , "startTime": {
+      "@id": "http://polimi.deib/tracing#startTime"
+      , "@type": "http://www.w3.org/2001/XMLSchema#integer"
+    }
+    , "binaryVal": {
+      "@id": "http://polimi.deib/tracing#binaryVal"
+      , "@type": "http://www.w3.org/2001/XMLSchema#hexBinary"
+    }
+    , "spanOfTrace": {
+      "@id": "http://polimi.deib/tracing#spanOfTrace"
+      , "@type": "@id"
+    }
+    , "hasField": {
+      "@id": "http://polimi.deib/tracing#hasField"
+      , "@type": "@id"
+    }
+    , "tagOf": {
+      "@id": "http://polimi.deib/tracing#tagOf"
+      , "@type": "@id"
+    }
+    , "hasProcessTag": {
+      "@id": "http://polimi.deib/tracing#hasProcessTag"
+      , "@type": "@id"
+    }
+    , "hasLog": {
+      "@id": "http://polimi.deib/tracing#hasLog"
+      , "@type": "@id"
+    }
+    , "serviceName": {
+      "@id": "http://polimi.deib/tracing#serviceName"
+      , "@type": "http://www.w3.org/2001/XMLSchema#string"
+    }
+    , "reference": {
+      "@id": "http://polimi.deib/tracing#reference"
+      , "@type": "@id"
+    }
+    , "duration": {
+      "@id": "http://polimi.deib/tracing#duration"
+      , "@type": "http://www.w3.org/2001/XMLSchema#integer"
+    }
+    , "childOf": {
+      "@id": "http://polimi.deib/tracing#childOf"
+      , "@type": "@id"
+    }
+    , "Span": {
+      "@id": "http://polimi.deib/tracing#Span"
+    }
+    , "boolVal": {
+      "@id": "http://polimi.deib/tracing#boolVal"
+      , "@type": "http://www.w3.org/2001/XMLSchema#boolean"
+    }
+    , "hasSpanTag": {
+      "@id": "http://polimi.deib/tracing#hasSpanTag"
+      , "@type": "@id"
+    }
+    , "Process": {
+      "@id": "http://polimi.deib/tracing#Process"
+    }
+    , "Tag": {
+      "@id": "http://polimi.deib/tracing#Tag"
+    }
+    , "logOf": {
+      "@id": "http://polimi.deib/tracing#logOf"
+      , "@type": "@id"
+    }
+    , "longVal": {
+      "@id": "http://polimi.deib/tracing#longVal"
+      , "@type": "http://www.w3.org/2001/XMLSchema#integer"
+    }
+    , "tagKey": {
+      "@id": "http://polimi.deib/tracing#tagKey"
+      , "@type": "http://www.w3.org/2001/XMLSchema#string"
+    }
+    , "followsFrom": {
+      "@id": "http://polimi.deib/tracing#followsFrom"
+      , "@type": "@id"
+    }
+    , "traceId": {
+      "@id": "http://polimi.deib/tracing#traceId"
+      , "@type": "http://www.w3.org/2001/XMLSchema#string"
+    }
+  }
+}

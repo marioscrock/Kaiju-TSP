@@ -1,9 +1,8 @@
 package collector;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.apache.thrift.TException;
 import org.json.simple.JSONArray;
@@ -30,16 +29,19 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	//Keep track of traces already seen
 	public HashSet<String> traceIds = new HashSet<String>();
 	public int numbBatches = 0;
-	public static final String PREFIX_LOG = "tr:log/";
-	public static final String PREFIX_PROCESS = "tr:process/";
-	public static final String PREFIX_SPAN = "tr:span/";
-	public static final String PREFIX_TAG = "tr:tag/";
-	public static final String PREFIX_TRACE = "tr:trace/";
+	public static final String PREFIX_LOG = "tr:log_";
+	public static final String PREFIX_PROCESS = "tr:process_";
+	public static final String PREFIX_SPAN = "tr:span_";
+	public static final String PREFIX_TAG = "tr:tag_";
+	public static final String PREFIX_TRACE = "tr:trace_";
 	
 	@Override
 	public List<BatchSubmitResponse> submitBatches(List<Batch> batches) throws TException {
 		
-		System.out.println("Processing batch number: " + numbBatches + "\nBatch size: " + batches.size());
+		Logger log = Logger.getLogger("jaeger-java-collector");
+		
+		log.info("Processing batch number: " + numbBatches + "\nBatch size: " + batches.size());
+		
 		numbBatches += batches.size();
 		
 		JSONObject obj = new JSONObject();
@@ -51,17 +53,19 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 				e.printStackTrace();
 			}
 		}
-
-        try (FileWriter file = new FileWriter("/Users/Mario/Desktop/test" + numbBatches + ".json")) {
-
-            file.write(obj.toJSONString());
-            file.flush();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        System.out.print(obj);
+		
+		log.info(obj.toJSONString());
+		
+//        try (FileWriter file = new FileWriter("/Users/Mario/Desktop/test" + numbBatches + ".json")) {
+//
+//            file.write(obj.toJSONString());
+//            file.flush();
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//        System.out.print(obj);
 		
 		return null;
 		
@@ -86,7 +90,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 					
 				} else if (hashProcess(process) == hashProcess(p)){
 					//If not equal as defined in equalsProcess check for colliding hashes
-					//TODO Specialize the exeption type 
+					//TODO Specialize the exception type 
 					throw new Exception("Colliding hash");
 				}
 				
@@ -213,6 +217,31 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 		return jsonTags;
 		
 	}
+	
+	@SuppressWarnings("unchecked")
+	private JSONArray logsToJson(List<Log> logs, String prefixId) {
+		
+		JSONArray jsonLogs = new JSONArray();
+		
+		for(Log log : logs) {
+			
+			JSONObject jsonLog = new JSONObject();
+			jsonLog.put("@id", PREFIX_LOG + prefixId + log.getTimestamp());
+			jsonLog.put("timestamp", log.getTimestamp());
+			
+			List<Tag> fields = log.getFields();
+			JSONArray jsonFields = tagsToJson(fields);
+			jsonLog.put("hasField", jsonFields);
+			
+			JSONObject jsonLogNode = new JSONObject();
+			jsonLogNode.put("Log", jsonLog);
+			jsonLogs.add(jsonLogNode);
+					
+		}
+		
+		return jsonLogs;
+
+	}
 
 	@SuppressWarnings("unchecked")
 	private void spansToJson(JSONObject obj, List<Span> spans, String processId) {
@@ -293,52 +322,29 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 		}
 	
 	}
-
-	@SuppressWarnings("unchecked")
-	private JSONArray logsToJson(List<Log> logs, String prefixId) {
-		
-		JSONArray jsonLogs = new JSONArray();
-		
-		for(Log log : logs) {
-			
-			JSONObject jsonLog = new JSONObject();
-			jsonLog.put("@id", PREFIX_LOG + prefixId + log.getTimestamp());
-			jsonLog.put("timestamp", log.getTimestamp());
-			
-			List<Tag> fields = log.getFields();
-			JSONArray jsonFields = tagsToJson(fields);
-			jsonLog.put("hasField", jsonFields);
-			
-			jsonLogs.add(((new JSONObject()).put("Log", jsonLog)));
-					
-		}
-		
-		return jsonLogs;
-
-	}
 	
 	//Special char replace
 	private String r(String string) {
 		
 		String rString = string;
-		rString = string.replace(" ", "%20");
-		rString = string.replace("!", "%21");
-		rString = string.replace("''", "%22");
-		rString = string.replace("#", "%23");
-		rString = string.replace("$", "%24");
-		rString = string.replace("&", "%26");
-		rString = string.replace(")", "%29");
-		rString = string.replace("*", "%2A");
-		rString = string.replace("+", "%2B");
-		rString = string.replace(",", "%2C");
-		rString = string.replace("/", "%2F");
-		rString = string.replace(":", "%3A");
-		rString = string.replace(";", "%3B");
-		rString = string.replace("=", "%3D");
-		rString = string.replace("?", "%3F");
-		rString = string.replace("@", "%40");
-		rString = string.replace("[", "%5B");
-		rString = string.replace("]", "%5D");
+		rString = rString.replace(" ", "%20")
+				.replace("!", "%21")
+				.replace("''", "%22")
+				.replace("#", "%23")
+				.replace("$", "%24")
+				.replace("&", "%26")
+				.replace(")", "%29")
+				.replace("*", "%2A")
+				.replace("+", "%2B")
+				.replace(",", "%2C")
+				.replace("/", "%2F")
+				.replace(":", "%3A")
+				.replace(";", "%3B")
+				.replace("=", "%3D")
+				.replace("?", "%3F")
+				.replace("@", "%40")
+				.replace("[", "%5B")
+				.replace("]", "%5D");
 		
 		return rString;
 	
