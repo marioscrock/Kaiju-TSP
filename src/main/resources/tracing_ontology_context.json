@@ -1,6 +1,7 @@
 {
   "@context": {
-    "hasSpan": {
+    "tr": "http://polimi.deib/tracing#"
+    , "hasSpan": {
       "@id": "http://polimi.deib/tracing#hasSpan"
       , "@type": "@id"
     }

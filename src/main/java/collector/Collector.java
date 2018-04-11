@@ -2,6 +2,8 @@ package collector;
 
 import com.uber.tchannel.api.TChannel;
 
+import websocket.JsonTraces;
+
 public class Collector {
 
 	public static void main(String[] args) throws InterruptedException {
@@ -25,6 +27,10 @@ public class Collector {
 //			e.printStackTrace();
 //		}
 		
+		//Open WebSocket
+		JsonTraces ws = new JsonTraces();
+		Thread webSocketThread = new Thread(ws);
+    	webSocketThread.run();
 		
 		// create TChannel for server
 		TChannel tchannel = new TChannel.Builder("jaeger-collector")

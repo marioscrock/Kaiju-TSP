@@ -1,10 +1,10 @@
 package collector;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.logging.Logger;
 
 import org.apache.thrift.TException;
+import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -21,13 +21,13 @@ import thriftgen.SpanRef;
 import thriftgen.SpanRefType;
 import thriftgen.Tag;
 import thriftgen.TagType;
+import websocket.JsonTraces;
 
 public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatches_args, Collector.submitBatches_result> implements Collector.Iface{
 	
-	public CollectorHandler() {};
-	public HashSet<thriftgen.Process> processesSeen = new HashSet<thriftgen.Process>();
+	public ConcurrentHashSet<thriftgen.Process> processesSeen = new ConcurrentHashSet<thriftgen.Process>();
 	//Keep track of traces already seen
-	public HashSet<String> traceIds = new HashSet<String>();
+	public ConcurrentHashSet<String> traceIds = new ConcurrentHashSet<String>();
 	public int numbBatches = 0;
 	public static final String PREFIX_LOG = "tr:log_";
 	public static final String PREFIX_PROCESS = "tr:process_";
@@ -54,7 +54,8 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			}
 		}
 		
-		log.info(obj.toJSONString());
+		//log.info(obj.toJSONString());
+		JsonTraces.sendBatch(obj);
 		
 //        try (FileWriter file = new FileWriter("/Users/Mario/Desktop/test" + numbBatches + ".json")) {
 //
