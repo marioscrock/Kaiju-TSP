@@ -50,7 +50,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			batchToJson(obj, batch);
 		}
 
-        try (FileWriter file = new FileWriter("test" + numbBatches + ".json")) {
+        try (FileWriter file = new FileWriter("/Users/Mario/Desktop/test" + numbBatches + ".json")) {
 
             file.write(obj.toJSONString());
             file.flush();
@@ -80,6 +80,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			
 			//Add Tags of the process
 			JSONArray jsonTags = tagsToJson(process.getTags());
+			
 			for (Object o : jsonTags) {
 				JSONObject jsonTag = (JSONObject) o;
 				obj.put("Tag", jsonTag.get("Tag"));
@@ -138,7 +139,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 		//TODO ADD id to the PROCESS! Scan all traces and add all ids traceId+processId? 
 		//We DO NOT have process Ids at this point! Review Process definition!
 		JSONObject jsonProcess = new JSONObject();
-		jsonProcess.put("@id", PREFIX_PROCESS + postfix_process);
+		jsonProcess.put("@id", PREFIX_PROCESS + r(postfix_process));
 		jsonProcess.put("serviceName", process.getServiceName());
 		
 		//We assume tags created once for process in batchToJson function
@@ -158,7 +159,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			else if (tag.vType.equals(TagType.BINARY))
 				id += tag.vBinary;
 			
-			jsonProcess.put("hasProcessTag", PREFIX_TAG + id);
+			jsonProcess.put("hasProcessTag", PREFIX_TAG + r(id));
 		}
 		
 		obj.put("Process", jsonProcess);
@@ -197,8 +198,11 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 				id += tag.vBinary;
 			}
 			
-			jsonTag.put("@id", PREFIX_TAG + id);
-			jsonTags.add((new JSONObject()).put("Tag", jsonTag));
+			jsonTag.put("@id", PREFIX_TAG + r(id));
+			
+			JSONObject jsonTagNode = new JSONObject();
+			jsonTagNode.put("Tag", jsonTag);
+			jsonTags.add(jsonTagNode);
 					
 		}
 		
@@ -208,8 +212,6 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 
 	@SuppressWarnings("unchecked")
 	private void spansToJson(JSONObject obj, List<Span> spans, UUID processUUID) {
-		
-		JSONArray jsonSpans = new JSONArray();
 		
 		for(Span span : spans) {
 			
@@ -234,24 +236,33 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			
 			//TAG
 			List<Tag> tags = span.getTags();
-			JSONArray jsonTags = tagsToJson(tags);
-			jsonSpan.put("hasSpanTag", jsonTags);
+			if (tags != null) { 
+				JSONArray jsonTags = tagsToJson(tags);
+				jsonSpan.put("hasSpanTag", jsonTags);
+			}
 			
 			//LOG
 			List<Log> logs = span.getLogs();
-			JSONArray jsonLogs = logsToJson(logs, id);
-			jsonSpan.put("hasLog", jsonLogs);
+			if (logs != null) { 
+				JSONArray jsonLogs = logsToJson(logs, id);
+				jsonSpan.put("hasLog", jsonLogs);
+			}
 			
 			//REFERENCES
 			List<SpanRef> refs = span.getReferences();
-			//Put reference properties in jsonSpan object
-			refsToJson(refs, jsonSpan);
+			if (refs != null) {
+				//Put reference properties in jsonSpan object
+				refsToJson(refs, jsonSpan);
+			}
 			
-			jsonSpans.add((new JSONObject()).put("Span", jsonSpan));
+			//CHILDOF reference with Parent
+			if (span.getParentSpanId() != 0) {
+				jsonSpan.put("childOf", PREFIX_SPAN + traceIdHex + Long.toHexString(span.getParentSpanId()));
+			}
+			
+			obj.put("Span", jsonSpan);
 					
 		}
-		
-		obj.put("Spans", jsonSpans);
 		
 	}
 	
@@ -294,25 +305,60 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			JSONArray jsonFields = tagsToJson(fields);
 			jsonLog.put("hasField", jsonFields);
 			
-			jsonLogs.add((new JSONObject()).put("Log", jsonLog));
+			jsonLogs.add(((new JSONObject()).put("Log", jsonLog)));
 					
 		}
 		
 		return jsonLogs;
 
 	}
+	
+	//Special char replace
+	private String r(String string) {
+		
+		String rString = string;
+		rString = string.replace(" ", "%20");
+		rString = string.replace("!", "%21");
+		rString = string.replace("''", "%22");
+		rString = string.replace("#", "%23");
+		rString = string.replace("$", "%24");
+		rString = string.replace("&", "%26");
+		rString = string.replace(")", "%29");
+		rString = string.replace("*", "%2A");
+		rString = string.replace("+", "%2B");
+		rString = string.replace(",", "%2C");
+		rString = string.replace("/", "%2F");
+		rString = string.replace(":", "%3A");
+		rString = string.replace(";", "%3B");
+		rString = string.replace("=", "%3D");
+		rString = string.replace("?", "%3F");
+		rString = string.replace("@", "%40");
+		rString = string.replace("[", "%5B");
+		rString = string.replace("]", "%5D");
+		
+		return rString;
+	
+	}
 
 	@Override
 	public ThriftResponse<Collector.submitBatches_result> handleImpl(ThriftRequest<Collector.submitBatches_args> request) {
 		
-		System.out.println("HERE");
 		List<Batch> batches = request.getBody(Collector.submitBatches_args.class).getBatches();
 		
-		try {
-			submitBatches(batches);
-		} catch (TException e) {
-			e.printStackTrace();
-		}
+		Thread t = new Thread(new Runnable() {
+				
+			@Override
+			public void run() {
+				try {
+					submitBatches(batches);
+				} catch (TException e) {
+					e.printStackTrace();
+				}		
+			}
+			
+		});
+		
+		t.run();
 		
 		return new ThriftResponse.Builder<Collector.submitBatches_result>(request)
 	            .setBody(new Collector.submitBatches_result())
