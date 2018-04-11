@@ -2,9 +2,8 @@ package collector;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.UUID;
 
 import org.apache.thrift.TException;
 import org.json.simple.JSONArray;
@@ -27,10 +26,9 @@ import thriftgen.TagType;
 public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatches_args, Collector.submitBatches_result> implements Collector.Iface{
 	
 	public CollectorHandler() {};
-	public HashMap<thriftgen.Process, UUID> processesMap = new HashMap<thriftgen.Process, UUID>();
-	//For each trace keep track of processes related in an HashMap
-	//For each trace the HashMap contains (processHash, incremental processId for given trace) pairs
-	public HashMap<String, HashMap<UUID, Integer>> traceIds = new HashMap<String, HashMap<UUID, Integer>>();
+	public HashSet<thriftgen.Process> processesSeen = new HashSet<thriftgen.Process>();
+	//Keep track of traces already seen
+	public HashSet<String> traceIds = new HashSet<String>();
 	public int numbBatches = 0;
 	public static final String PREFIX_LOG = "tr:log/";
 	public static final String PREFIX_PROCESS = "tr:process/";
@@ -47,7 +45,11 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 		JSONObject obj = new JSONObject();
 		
 		for(Batch batch : batches) {
-			batchToJson(obj, batch);
+			try {
+				batchToJson(obj, batch);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 
         try (FileWriter file = new FileWriter("/Users/Mario/Desktop/test" + numbBatches + ".json")) {
@@ -67,29 +69,47 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	
 	
 	@SuppressWarnings("unchecked")
-	private void batchToJson(JSONObject obj, Batch batch) {
+	private void batchToJson(JSONObject obj, Batch batch) throws Exception {
 		
 		thriftgen.Process process = batch.getProcess();
-		UUID processUUID;
+		//Get processId related to the process
+		int processId = hashProcess(process);
 		
-		if (!processesMap.keySet().contains(process)) {
+		boolean seen = false;
+		if (processesSeen != null) {
 			
-			//Generate UUID and add process if NOT ALREADY SEEN
-			processUUID = UUID.randomUUID();
-			processesMap.put(process, processUUID);	
+			for (thriftgen.Process p : processesSeen)
+				if (equalsProcess(process, p)) {
+					
+					seen = true;
+					break;
+					
+				} else if (hashProcess(process) == hashProcess(p)){
+					//If not equal as defined in equalsProcess check for colliding hashes
+					//TODO Specialize the exeption type 
+					throw new Exception("Colliding hash");
+				}
+				
+		}
+		
+		if (!seen) {
 			
+			//Generate Id by custom hash function and add process if NOT ALREADY SEEN
+			processId = hashProcess(process);
+			processesSeen.add(process);	
+				
 			//Add Tags of the process
 			JSONArray jsonTags = tagsToJson(process.getTags());
-			
+				
 			for (Object o : jsonTags) {
 				JSONObject jsonTag = (JSONObject) o;
 				obj.put("Tag", jsonTag.get("Tag"));
 			}
 			
-		} else {
-			
-			//Get processUUID related to the process
-			processUUID = processesMap.get(process);	
+			//PROCESS
+			//Add JSONLD representation of process to obj
+			processToJson(obj, process, Integer.toString(processId)); 
+					
 		}
 		
 		//TRACES Add all traces to obj
@@ -98,9 +118,9 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			
 			String traceIdHex = traceIdToHex(span.getTraceIdHigh(),span.getTraceIdLow());
 			
-			if (!traceIds.keySet().contains(traceIdHex)) {
+			if (!traceIds.contains(traceIdHex)) {
 				
-				traceIds.put(traceIdHex, new HashMap<UUID, Integer>());
+				traceIds.add(traceIdHex);
 				
 				//Trace to JSONLD
 				JSONObject jsonTrace = new JSONObject();
@@ -111,35 +131,19 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 				
 			} 
 			
-			HashMap<UUID, Integer> mapTraceProcess = traceIds.get(traceIdHex);
-			//If process not already mapped for a given trace
-			if (!mapTraceProcess.containsKey(processUUID)) {
-				
-				//Add process UUID to the map trace-processes
-				int processTraceId = mapTraceProcess.keySet().size();
-				mapTraceProcess.put(processUUID, processTraceId);
-				
-				//PROCESS
-				//Add JSONLD representation of process to obj
-				processToJson(obj, process, traceIdHex + "p" + processTraceId); 
-				
-			} 
-			
 		}
 			
 		//SPANS
 		List<Span> spans = batch.getSpans();
-		spansToJson(obj, spans, processUUID);  //Add JSONLD representation of spans to obj
+		spansToJson(obj, spans, Integer.toString(processId));  //Add JSONLD representation of spans to obj
 		
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void processToJson(JSONObject obj, thriftgen.Process process, String postfix_process) {
+	private void processToJson(JSONObject obj, thriftgen.Process process, String processId) {
 		
-		//TODO ADD id to the PROCESS! Scan all traces and add all ids traceId+processId? 
-		//We DO NOT have process Ids at this point! Review Process definition!
 		JSONObject jsonProcess = new JSONObject();
-		jsonProcess.put("@id", PREFIX_PROCESS + r(postfix_process));
+		jsonProcess.put("@id", PREFIX_PROCESS + processId);
 		jsonProcess.put("serviceName", process.getServiceName());
 		
 		//We assume tags created once for process in batchToJson function
@@ -211,7 +215,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	}
 
 	@SuppressWarnings("unchecked")
-	private void spansToJson(JSONObject obj, List<Span> spans, UUID processUUID) {
+	private void spansToJson(JSONObject obj, List<Span> spans, String processId) {
 		
 		for(Span span : spans) {
 			
@@ -231,7 +235,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			jsonSpan.put("flags", span.getFlags());
 			
 			//Object properties
-			jsonSpan.put("spanOfProcess", PREFIX_PROCESS + traceIdHex + "p" + traceIds.get(traceIdHex).get(processUUID));
+			jsonSpan.put("spanOfProcess", PREFIX_PROCESS + processId);
 			jsonSpan.put("spanOfTrace", PREFIX_TRACE + traceIdHex);
 			
 			//TAG
@@ -338,6 +342,68 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 		
 		return rString;
 	
+	}
+	
+	
+	/**
+	 * Returns True if two processes are equal, processes are equals if same serviceName
+	 * and same tags(despite of their order).
+	 * @param process1 First process to be compared
+	 * @param process2 Second process to be compared
+	 * @return True if two processes are equal, processes are equals if same serviceName
+	 * and same tags(despite of their order). False otherwise.
+	 */
+	private boolean equalsProcess(thriftgen.Process process1, thriftgen.Process process2) {
+			
+	    if (process1 == process2)
+	      return true;
+
+	    boolean process1_present_serviceName = true && process1.isSetServiceName();
+	    boolean process2_present_serviceName = true && process2.isSetServiceName();
+	    if (process1_present_serviceName || process2_present_serviceName) {
+	      if (!(process1_present_serviceName && process2_present_serviceName))
+	        return false;
+	      if (!process1.serviceName.equals(process2.serviceName))
+	        return false;
+	    }
+
+	    boolean process1_present_tags = true && process1.isSetTags();
+	    boolean process2_present_tags = true && process2.isSetTags();
+	    if (process1_present_tags || process2_present_tags) {
+	      if (!(process1_present_tags && process2_present_tags))
+	        return false;
+	      
+	      for (Tag tag : process1.getTags())
+	    	  if (!process2.getTags().contains(tag))
+	    	  	return false;
+	      
+	      for (Tag tag : process2.getTags())
+	    	  if (!process1.getTags().contains(tag))
+	    	  	return false;
+	      
+	    }
+
+	    return true;
+		
+	}
+	
+	//Provides an hash for each Process, same hash if same serviceName
+	//and same tags(despite of their order)
+	private int hashProcess(thriftgen.Process process) {
+		
+		int result = 0;
+		//37 - must be prime
+		result = 37 * result + process.getServiceName().hashCode();
+		
+		int tagsHash = 0;
+		if (process.getTags() != null) {
+			for (Tag tag : process.getTags())
+				tagsHash += tag.hashCode();
+		}
+		result = 37 * result + tagsHash;
+		
+		return result;
+		
 	}
 
 	@Override
