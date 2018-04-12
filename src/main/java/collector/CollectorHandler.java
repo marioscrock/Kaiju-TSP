@@ -51,11 +51,10 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	@Override
 	public List<BatchSubmitResponse> submitBatches(List<Batch> batches) throws TException {
 		
-		log.info("Processing batch number: " + numbBatches + "\nBatch size: " + batches.size());
-		
-		numbBatches += batches.size();
-		
 		for(Batch batch : batches) {
+			
+			numbBatches += 1;
+			log.info("Processing batch number: " + numbBatches + "\n #Processes seen: " + processesSeen.size());
 			
 			try {
 				JsonTracesWS.sendBatch(batchToJson(batch)); 
@@ -63,7 +62,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 				log.error(e.getMessage(), e);
 			}
 			
-			esperHandler.sendBatch(batch);	
+			//esperHandler.sendBatch(batch);	
 			
 		}
 			

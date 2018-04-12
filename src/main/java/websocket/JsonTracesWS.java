@@ -17,17 +17,26 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class JsonTracesWS implements Runnable {
 
     // this set is shared between sessions and threads, so it needs to be thread-safe (http://stackoverflow.com/a/2688817)
-    static ConcurrentHashSet<Session> clientSet = new ConcurrentHashSet<>();
+    static ConcurrentHashSet<Session> clientSet;
+    static AtomicBoolean queueOn; 
+    static Thread pullingQueue;
     private static JSONObject jsonContext;
+    private static BlockingQueue<JSONObject> queue;
     
     @Override
 	public void run() {
-//    	staticFiles.location("/public"); //index.html is served at localhost:4567 (default port)
-//      staticFiles.expireTime(600);
+    	
+    	clientSet = new ConcurrentHashSet<>();
+    	queue = new LinkedBlockingQueue<>();
+    	queueOn = new AtomicBoolean(false);
+    	pullingQueue = new Thread();
     	
     	JSONParser parser = new JSONParser();
 
@@ -61,31 +70,60 @@ public class JsonTracesWS implements Runnable {
         });
     }
     
-    @SuppressWarnings("unchecked")
+    
     public static void sendBatch(JSONObject batch) {
     	
-        clientSet.stream().filter(Session::isOpen).forEach(session -> {
-            try {
-            	
-            	batch.put("@context", jsonContext);
-            	
-            	JsonLdOptions options = new JsonLdOptions();
-                //Call whichever JSONLD function you want! (e.g. compact)
-                //Object compact = JsonLdProcessor.compact(batch, jsonContext, options);
-            	Object expand = JsonLdProcessor.expand(batch, options);
-                
-                //session.getRemote().sendString(JsonUtils.toString(compact));
-                session.getRemote().sendString(JsonUtils.toString(expand));
-            	
-                //session.getRemote().sendString(batch.toJSONString());
-                
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
+    	queue.add(batch);
+    	
+    	if (!pullingQueue.isAlive() && queueOn.get()) {
+    		
+    		pullingQueue = new Thread(new Runnable() {
+        		
+        		@Override
+        		public void run() {
+        			System.out.println("RUNNING");
+        			while (queueOn.get()) {
+        				JsonTracesWS.pullQueue();
+        			}
+        			System.out.println("STOPPING");
+        			return;
+        		}
+        	
+            });
+    		
+    		pullingQueue.start();
+    		
+    	}
+    
+    	queueOn.set(clientSet.size() > 0);
+    	
     }
+    
+    @SuppressWarnings("unchecked")
+    public static void pullQueue() {
+    	
+    	JSONObject batch = null;
+		try {
+			batch = queue.take();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+    	batch.put("@context", jsonContext);
+    	
+    	JsonLdOptions options = new JsonLdOptions();
+        //Call whichever JSONLD function you want! (e.g. compact)
+        //Object compact = JsonLdProcessor.compact(batch, jsonContext, options);
+    	Object expand = JsonLdProcessor.expand(batch, options);
+        
+        try {
+        	//broadcastMessage(JsonUtils.toString(compact));
+			broadcastMessage(JsonUtils.toString(expand));
+			//broadcastMessage(batch.toJSONString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}                    
 
-
-	
+    }
 
 }
