@@ -13,6 +13,7 @@ import com.uber.tchannel.api.handlers.ThriftRequestHandler;
 import com.uber.tchannel.messages.ThriftRequest;
 import com.uber.tchannel.messages.ThriftResponse;
 
+import eps.EsperHandler;
 import thriftgen.Batch;
 import thriftgen.BatchSubmitResponse;
 import thriftgen.Collector;
@@ -40,6 +41,13 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	public static final String PREFIX_TAG = "tr:tag_";
 	public static final String PREFIX_TRACE = "tr:trace_";
 	
+	public EsperHandler esperHandler;
+	
+	public CollectorHandler() {
+		esperHandler = new EsperHandler();
+		esperHandler.initializeHandler();
+	}
+	
 	@Override
 	public List<BatchSubmitResponse> submitBatches(List<Batch> batches) throws TException {
 		
@@ -55,10 +63,14 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+			
+			esperHandler.sendBatch(batch);
+			
 		}
 		
 		//log.info(obj.toJSONString());
 		JsonTraces.sendBatch(obj);
+		
 		
 //        try (FileWriter file = new FileWriter("/Users/Mario/Desktop/test" + numbBatches + ".json")) {
 //
