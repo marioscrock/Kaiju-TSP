@@ -1,10 +1,15 @@
 package collector;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.uber.tchannel.api.TChannel;
 
 import websocket.JsonTraces;
 
 public class Collector {
+	
+	private final static Logger log = LoggerFactory.getLogger(Collector.class);
 
 	public static void main(String[] args) throws InterruptedException {
 
@@ -39,7 +44,8 @@ public class Collector {
 
 		tchannel.makeSubChannel("jaeger-collector")
 			.register("Collector::submitBatches", new CollectorHandler());
-
+		
+		log.info("Handler registered for Collector::submitBatches");
 		// listen for incoming connections
 		tchannel.listen();//.channel().closeFuture().sync();
        //tchannel.shutdown(false);

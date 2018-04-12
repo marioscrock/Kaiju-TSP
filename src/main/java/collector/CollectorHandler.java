@@ -1,12 +1,13 @@
 package collector;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 import org.apache.thrift.TException;
 import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.uber.tchannel.api.handlers.ThriftRequestHandler;
 import com.uber.tchannel.messages.ThriftRequest;
@@ -25,10 +26,14 @@ import websocket.JsonTraces;
 
 public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatches_args, Collector.submitBatches_result> implements Collector.Iface{
 	
+	private final static Logger log = LoggerFactory.getLogger(CollectorHandler.class);
+	
+	//Keep track of traces and processes already seen
 	public ConcurrentHashSet<thriftgen.Process> processesSeen = new ConcurrentHashSet<thriftgen.Process>();
-	//Keep track of traces already seen
 	public ConcurrentHashSet<String> traceIds = new ConcurrentHashSet<String>();
+	
 	public int numbBatches = 0;
+	
 	public static final String PREFIX_LOG = "tr:log_";
 	public static final String PREFIX_PROCESS = "tr:process_";
 	public static final String PREFIX_SPAN = "tr:span_";
@@ -37,8 +42,6 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	
 	@Override
 	public List<BatchSubmitResponse> submitBatches(List<Batch> batches) throws TException {
-		
-		Logger log = Logger.getLogger("jaeger-java-collector");
 		
 		log.info("Processing batch number: " + numbBatches + "\nBatch size: " + batches.size());
 		
