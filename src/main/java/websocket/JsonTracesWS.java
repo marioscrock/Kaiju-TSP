@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-public class JsonTraces implements Runnable {
+public class JsonTracesWS implements Runnable {
 
     // this set is shared between sessions and threads, so it needs to be thread-safe (http://stackoverflow.com/a/2688817)
     static ConcurrentHashSet<Session> clientSet = new ConcurrentHashSet<>();
@@ -70,7 +70,7 @@ public class JsonTraces implements Runnable {
             	batch.put("@context", jsonContext);
             	
             	JsonLdOptions options = new JsonLdOptions();
-                // Call whichever JSONLD function you want! (e.g. compact)
+                //Call whichever JSONLD function you want! (e.g. compact)
                 //Object compact = JsonLdProcessor.compact(batch, jsonContext, options);
             	Object expand = JsonLdProcessor.expand(batch, options);
                 

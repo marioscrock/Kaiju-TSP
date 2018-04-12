@@ -23,7 +23,7 @@ import thriftgen.SpanRef;
 import thriftgen.SpanRefType;
 import thriftgen.Tag;
 import thriftgen.TagType;
-import websocket.JsonTraces;
+import websocket.JsonTracesWS;
 
 public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatches_args, Collector.submitBatches_result> implements Collector.Iface{
 	
@@ -55,138 +55,110 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 		
 		numbBatches += batches.size();
 		
-		JSONObject obj = new JSONObject();
-		
 		for(Batch batch : batches) {
+			
 			try {
-				batchToJson(obj, batch);
+				JsonTracesWS.sendBatch(batchToJson(batch)); 
 			} catch (Exception e) {
-				e.printStackTrace();
+				log.error(e.getMessage(), e);
 			}
 			
-			esperHandler.sendBatch(batch);
+			esperHandler.sendBatch(batch);	
 			
 		}
-		
-		//log.info(obj.toJSONString());
-		JsonTraces.sendBatch(obj);
-		
-		
-//        try (FileWriter file = new FileWriter("/Users/Mario/Desktop/test" + numbBatches + ".json")) {
-//
-//            file.write(obj.toJSONString());
-//            file.flush();
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//
-//        System.out.print(obj);
-		
+			
 		return null;
 		
 	}
 	
 	
 	@SuppressWarnings("unchecked")
-	private void batchToJson(JSONObject obj, Batch batch) throws Exception {
+	private JSONObject batchToJson(Batch batch) throws Exception {
+		
+		JSONObject obj = new JSONObject();
 		
 		thriftgen.Process process = batch.getProcess();
+		
 		//Get processId related to the process
 		int processId = hashProcess(process);
 		
+		//Must check equal through equalsProcess function
 		boolean seen = false;
 		if (processesSeen != null) {
 			
 			for (thriftgen.Process p : processesSeen)
-				if (equalsProcess(process, p)) {
-					
+				if (equalsProcess(process, p)) {				
 					seen = true;
-					break;
-					
+					break;				
 				} else if (hashProcess(process) == hashProcess(p)){
 					//If not equal as defined in equalsProcess check for colliding hashes
 					//TODO Specialize the exception type 
 					throw new Exception("Colliding hash");
-				}
-				
+				}		
 		}
 		
 		if (!seen) {
 			
+			//PROCESS
 			//Generate Id by custom hash function and add process if NOT ALREADY SEEN
 			processId = hashProcess(process);
 			processesSeen.add(process);	
-				
-			//Add Tags of the process
-			JSONArray jsonTags = tagsToJson(process.getTags());
-				
-			for (Object o : jsonTags) {
-				JSONObject jsonTag = (JSONObject) o;
-				obj.put("Tag", jsonTag.get("Tag"));
-			}
-			
-			//PROCESS
-			//Add JSONLD representation of process to obj
-			processToJson(obj, process, Integer.toString(processId)); 
 					
 		}
 		
-		//TRACES Add all traces to obj
-		//Map process as related to a given trace in traceIds map
-		for (Span span : batch.getSpans()) {
-			
-			String traceIdHex = traceIdToHex(span.getTraceIdHigh(),span.getTraceIdLow());
-			
-			if (!traceIds.contains(traceIdHex)) {
+		//Add JSONLD representation of process to obj
+		JSONObject jsonProcess = processToJson(process, Integer.toString(processId), seen); 
+		obj.put("Process", jsonProcess);
+		
+		if (batch.getSpans() != null) {
 				
-				traceIds.add(traceIdHex);
-				
-				//Trace to JSONLD
-				JSONObject jsonTrace = new JSONObject();
-				jsonTrace.put("@id", PREFIX_TRACE + traceIdHex);
-				jsonTrace.put("traceId", traceIdHex);
-				
-				obj.put("Trace", jsonTrace);
-				
-			} 
+			//SPANS
+			List<Span> spans = batch.getSpans();
+			JSONArray jsonSpans = spansToJson(spans, Integer.toString(processId));  //Add JSONLD representation of spans to obj
+			jsonProcess.put("hasSpan",jsonSpans);
 			
 		}
-			
-		//SPANS
-		List<Span> spans = batch.getSpans();
-		spansToJson(obj, spans, Integer.toString(processId));  //Add JSONLD representation of spans to obj
+		
+		return obj;
 		
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void processToJson(JSONObject obj, thriftgen.Process process, String processId) {
+	private JSONObject processToJson(thriftgen.Process process, String processId, boolean seen) {
 		
 		JSONObject jsonProcess = new JSONObject();
 		jsonProcess.put("@id", PREFIX_PROCESS + processId);
 		jsonProcess.put("serviceName", process.getServiceName());
 		
-		//We assume tags created once for process in batchToJson function
-		List<Tag> tags = process.getTags();
-		for(Tag tag : tags) {
+		if (!seen) {
 			
-			String id = tag.getKey();
+			//Add Tags of the process to the json (create once for processes NOT ALREADY SEEN)
+			JSONArray jsonTags = tagsToJson(process.getTags());	
+			jsonProcess.put("hasProcessTag", jsonTags);
 			
-			if (tag.vType.equals(TagType.STRING))
-				id += tag.vStr;
-			else if (tag.vType.equals(TagType.DOUBLE))
-				id += tag.vDouble;
-			else if (tag.vType.equals(TagType.BOOL))
-				id += tag.vBool;
-			else if (tag.vType.equals(TagType.LONG))
-				id += tag.vLong;
-			else if (tag.vType.equals(TagType.BINARY))
-				id += tag.vBinary;
-			
-			jsonProcess.put("hasProcessTag", PREFIX_TAG + r(id));
+		} else {
+			//We assume tags created once for process in batchToJson function
+			List<Tag> tags = process.getTags();
+			for(Tag tag : tags) {
+				
+				String id = tag.getKey();
+				
+				if (tag.vType.equals(TagType.STRING))
+					id += tag.vStr;
+				else if (tag.vType.equals(TagType.DOUBLE))
+					id += tag.vDouble;
+				else if (tag.vType.equals(TagType.BOOL))
+					id += tag.vBool;
+				else if (tag.vType.equals(TagType.LONG))
+					id += tag.vLong;
+				else if (tag.vType.equals(TagType.BINARY))
+					id += tag.vBinary;
+				
+				jsonProcess.put("hasProcessTag", PREFIX_TAG + r(id));
+			}
 		}
 		
-		obj.put("Process", jsonProcess);
+		return jsonProcess;
 
 	}
 	
@@ -201,32 +173,31 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			String id = tag.getKey();
 			jsonTag.put("key", tag.getKey());
 			
-			if (tag.vType.equals(TagType.STRING)){
-				jsonTag.put("stringVal", tag.vStr);
-				id += tag.vStr;
+			if (tag.getVType().equals(TagType.STRING)){
+				jsonTag.put("stringVal", tag.getVStr());
+				id += tag.getVStr();
 			}
-			else if (tag.vType.equals(TagType.DOUBLE)){
-				jsonTag.put("doubleVal", tag.vDouble);
-				id += tag.vDouble;
+			else if (tag.getVType().equals(TagType.DOUBLE)){
+				jsonTag.put("doubleVal", tag.getVDouble());
+				id += tag.getVDouble();
 			}
-			else if (tag.vType.equals(TagType.BOOL)){
-				jsonTag.put("boolVal", tag.vBool);
-				id += tag.vBool;
+			else if (tag.getVType().equals(TagType.BOOL)){
+				jsonTag.put("boolVal", tag.isVBool());
+				id += tag.isVBool();
 			}
-			else if (tag.vType.equals(TagType.LONG)){
-				jsonTag.put("longVal", tag.vLong);
-				id += tag.vLong;
+			else if (tag.getVType().equals(TagType.LONG)){
+				jsonTag.put("longVal", tag.getVLong());
+				id += tag.getVLong();
 			}
-			else if (tag.vType.equals(TagType.BINARY)){
-				jsonTag.put("binaryVal", tag.vBinary);
-				id += tag.vBinary;
+			else if (tag.getVType().equals(TagType.BINARY)){
+				jsonTag.put("binaryVal", tag.getVBinary());
+				id += tag.getVBinary();
 			}
 			
 			jsonTag.put("@id", PREFIX_TAG + r(id));
-			
-			JSONObject jsonTagNode = new JSONObject();
-			jsonTagNode.put("Tag", jsonTag);
-			jsonTags.add(jsonTagNode);
+			jsonTag.put("@type", "Tag");
+		
+			jsonTags.add(jsonTag);
 					
 		}
 		
@@ -243,15 +214,14 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			
 			JSONObject jsonLog = new JSONObject();
 			jsonLog.put("@id", PREFIX_LOG + prefixId + log.getTimestamp());
+			jsonLog.put("@type", "Log");
 			jsonLog.put("timestamp", log.getTimestamp());
 			
 			List<Tag> fields = log.getFields();
 			JSONArray jsonFields = tagsToJson(fields);
 			jsonLog.put("hasField", jsonFields);
 			
-			JSONObject jsonLogNode = new JSONObject();
-			jsonLogNode.put("Log", jsonLog);
-			jsonLogs.add(jsonLogNode);
+			jsonLogs.add(jsonLog);
 					
 		}
 		
@@ -260,19 +230,36 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	}
 
 	@SuppressWarnings("unchecked")
-	private void spansToJson(JSONObject obj, List<Span> spans, String processId) {
+	private JSONArray spansToJson(List<Span> spans, String processId) {
+		
+		JSONArray jsonSpans = new JSONArray();
 		
 		for(Span span : spans) {
 			
 			JSONObject jsonSpan = new JSONObject();
 			
-			//ATTENTION: convert in HEX like DB
+			//ATTENTION: converting in HEX like DB
 			String traceIdHex = traceIdToHex(span.getTraceIdHigh(), span.getTraceIdLow());
 			String spanIdHex = Long.toHexString(span.getSpanId());
 			String id = traceIdHex + spanIdHex;
 			
 			//Data properties
 			jsonSpan.put("@id", PREFIX_SPAN + id);
+			jsonSpan.put("@type", "Span");
+			
+			//TRACES
+			if (traceIds.add(traceIdHex)) {
+						
+				//Trace to JSONLD
+				JSONObject jsonTrace = new JSONObject();
+				jsonTrace.put("@id", PREFIX_TRACE + traceIdHex);
+				jsonTrace.put("@type", "Trace");
+				jsonTrace.put("traceId", traceIdHex);
+				
+				jsonSpan.put("spanOfTrace", jsonTrace);
+				
+			} 	
+		
 			jsonSpan.put("spanId", spanIdHex);
 			jsonSpan.put("operationName", span.getOperationName());
 			jsonSpan.put("startTime", span.getStartTime());
@@ -301,17 +288,14 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			List<SpanRef> refs = span.getReferences();
 			if (refs != null) {
 				//Put reference properties in jsonSpan object
-				refsToJson(refs, jsonSpan);
+				refsToJson(span, jsonSpan, refs);
 			}
 			
-			//CHILDOF reference with Parent
-			if (span.getParentSpanId() != 0) {
-				jsonSpan.put("childOf", PREFIX_SPAN + traceIdHex + Long.toHexString(span.getParentSpanId()));
-			}
-			
-			obj.put("Span", jsonSpan);
+			jsonSpans.add(jsonSpan);
 					
 		}
+		
+		return jsonSpans;
 		
 	}
 	
@@ -323,19 +307,33 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void refsToJson(List<SpanRef> refs, JSONObject jsonSpan) {
+	private void refsToJson(Span span, JSONObject jsonSpan, List<SpanRef> refs) {
+		
+		JSONArray childOf = new JSONArray();
+		JSONArray followsFrom = new JSONArray();
 		
 		for(SpanRef ref : refs) {
 			
 			String id = traceIdToHex(ref.getTraceIdHigh(), ref.getTraceIdLow()) + Long.toString(ref.getSpanId());
 			
-			if (ref.refType.equals(SpanRefType.CHILD_OF)) {
-				jsonSpan.put("childOf", PREFIX_SPAN + id);
-			} else if (ref.refType.equals(SpanRefType.FOLLOWS_FROM)) {
-				jsonSpan.put("followsFrom", PREFIX_SPAN + id);
-			}
-					
+			if (ref.refType.equals(SpanRefType.CHILD_OF))
+				childOf.add(PREFIX_SPAN + id);
+			else if (ref.refType.equals(SpanRefType.FOLLOWS_FROM))
+				followsFrom.add(PREFIX_SPAN + id);
+		
 		}
+		
+		//CHILDOF reference with Parent
+		if (span.getParentSpanId() != 0L) {
+			childOf.add(PREFIX_SPAN + traceIdToHex(span.getTraceIdHigh(), span.getTraceIdLow()) +
+					Long.toHexString(span.getParentSpanId()));
+		}
+		
+		if(childOf.size() > 0)
+			jsonSpan.put("childOf", childOf);
+		
+		if(followsFrom.size() > 0)
+			jsonSpan.put("followsFrom", followsFrom);
 	
 	}
 	
@@ -424,7 +422,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 		}
 		result = 37 * result + tagsHash;
 		
-		return result;
+		return Math.abs(result); 
 		
 	}
 

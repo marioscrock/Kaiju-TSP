@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import com.uber.tchannel.api.TChannel;
 
-import websocket.JsonTraces;
+import websocket.JsonTracesWS;
 
 public class Collector {
 	
@@ -33,7 +33,7 @@ public class Collector {
 //		}
 		
 		//Open WebSocket
-		JsonTraces ws = new JsonTraces();
+		JsonTracesWS ws = new JsonTracesWS();
 		Thread webSocketThread = new Thread(ws);
     	webSocketThread.run();
 		

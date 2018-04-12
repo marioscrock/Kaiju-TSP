@@ -1,11 +1,11 @@
 package collector;
 
-import websocket.JsonTraces;
+import websocket.JsonTracesWS;
 
 public class Try {
 
 	public static void main(String[] args) {
-		Thread webSocketThread = new Thread(new JsonTraces());
+		Thread webSocketThread = new Thread(new JsonTracesWS());
     	webSocketThread.run();
 	}
 

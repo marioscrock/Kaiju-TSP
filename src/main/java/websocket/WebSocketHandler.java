@@ -10,19 +10,19 @@ public class WebSocketHandler {
 
     @OnWebSocketConnect
     public void onConnect(Session client) throws Exception {
-        JsonTraces.clientSet.add(client);
-        JsonTraces.broadcastMessage("Hello!");
+        JsonTracesWS.clientSet.add(client);
+        JsonTracesWS.broadcastMessage("Hello!");
     }
 
     @OnWebSocketClose
     public void onClose(Session client, int statusCode, String reason) {
-    	JsonTraces.clientSet.remove(client);
-        JsonTraces.broadcastMessage("Bye!");
+    	JsonTracesWS.clientSet.remove(client);
+        JsonTracesWS.broadcastMessage("Bye!");
     }
 
     @OnWebSocketMessage
     public void onMessage(Session user, String message) {
-        JsonTraces.broadcastMessage("No one cares!");
+        JsonTracesWS.broadcastMessage("No one cares!");
     }
     
 }
