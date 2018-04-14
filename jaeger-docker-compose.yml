@@ -25,7 +25,7 @@ services:
 
     jaeger-agent:
       image: jaegertracing/jaeger-agent
-      command: ["/go/bin/agent-linux", "--collector.host-port=jaeger-collector:14267,jaeger-java-collector:2042"]
+      command: ["/go/bin/agent-linux", "--collector.host-port=192.168.1.73:2042"]
       ports:
         - "5775:5775/udp"
         - "6831:6831/udp"
@@ -34,16 +34,6 @@ services:
       restart: on-failure
       depends_on:
         - jaeger-collector
-        
-    jaeger-java-collector:
-      image: marioscrock/jaeger-java-collector
-      command: ["java","-jar","/usr/app/jaeger-0.0.1-SNAPSHOT-jar-with-dependencies.jar"]
-      ports:
-        - "2042:2042" 
-        - "4567:4567"
-      restart: on-failure
-      depends_on:
-        - jaeger-agent
 
     cassandra:
       image: cassandra:3.9

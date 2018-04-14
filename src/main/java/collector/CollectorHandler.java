@@ -62,6 +62,11 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 				log.error(e.getMessage(), e);
 			}
 			
+			//SERIALIZE BATCH to JSON
+			//BatchSerialize.numBatchToSerialize = 180;
+			//BatchSerialize.serialize(batch, numbBatches);
+			
+			//ESPER
 			//esperHandler.sendBatch(batch);	
 			
 		}
