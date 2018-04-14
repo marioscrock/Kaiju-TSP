@@ -42,6 +42,8 @@ public class BatchSerialize {
 						b.append(",");
 					}
 				}
+				
+				b.deleteCharAt(b.toString().lastIndexOf(","));
 				b.append("]");
 				
 				file.append(b.toString());
