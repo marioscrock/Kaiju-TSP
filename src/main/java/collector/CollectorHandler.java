@@ -31,7 +31,6 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	
 	//Keep track of traces and processes already seen
 	public ConcurrentHashSet<thriftgen.Process> processesSeen = new ConcurrentHashSet<thriftgen.Process>();
-	public ConcurrentHashSet<String> traceIds = new ConcurrentHashSet<String>();
 	
 	public int numbBatches = 0;
 	
@@ -258,7 +257,6 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			//Object properties
 			
 			//TRACE
-			traceIds.add(traceIdHex);
 			JSONObject jsonTrace = new JSONObject();
 			jsonTrace.put("@id", PREFIX_TRACE + traceIdHex);
 			jsonTrace.put("@type", "Trace");
