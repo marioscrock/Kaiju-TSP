@@ -31,7 +31,6 @@ public class FakeCollector {
     	webSocketThread.start();
 		
 		Gson gson = new Gson();
-		
 
 		InputStream in = FakeCollector.class.getResourceAsStream("/dumpTraces.json");
 		Batch[] batchesArray = gson.fromJson(new BufferedReader(new InputStreamReader(in)), Batch[].class);
