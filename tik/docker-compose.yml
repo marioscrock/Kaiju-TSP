@@ -13,6 +13,7 @@ services:
       - jaeger_jaeger-net
     volumes:
       - ./etc/telegraf:/etc/telegraf
+      #To enable [inputs.docker] within a container
       - /var/run/docker.sock:/var/run/docker.sock
       
   kapacitor:
