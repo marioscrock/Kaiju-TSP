@@ -2,7 +2,7 @@ version: '3'
 
 services:
     jaeger-collector:
-      image: jaegertracing/jaeger-collector
+      image: jaegertracing/jaeger-collector:1.5
       command: ["/go/bin/collector-linux", "--cassandra.keyspace=jaeger_v1_dc1", "--cassandra.servers=cassandra", "--collector.zipkin.http-port=9411"]
       ports:
         - "14269"
@@ -16,7 +16,7 @@ services:
         - cassandra-schema
 
     jaeger-query:
-      image: jaegertracing/jaeger-query
+      image: jaegertracing/jaeger-query:1.5
       command: ["/go/bin/query-linux", "--query.static-files=/go/jaeger-ui/", "--cassandra.keyspace=jaeger_v1_dc1", "--cassandra.servers=cassandra"]
       ports:
         - "16686:16686"
@@ -27,9 +27,23 @@ services:
       depends_on:
         - cassandra-schema
 
+    # jaeger-agent:
+    #   image: jaegertracing/jaeger-agent:1.5
+    #   command: ["/go/bin/agent-linux", "--collector.host-port=jaeger-collector:14267"]
+    #   ports:
+    #     - "5775:5775/udp"
+    #     - "6831:6831/udp"
+    #     - "6832:6832/udp"
+    #     - "5778:5778"
+    #   restart: on-failure
+    #   networks:
+    #     - jaeger-net
+    #   depends_on:
+    #     - jaeger-collector
+
     jaeger-agent:
-      image: jaegertracing/jaeger-agent
-      command: ["/go/bin/agent-linux", "--collector.host-port=jaeger-collector:14267"] #,jaeger-java-collector:2042"]
+      image: marioscrock/jaeger-agent
+      command: ["./main", "--collector.host-port=jaeger-collector:14267"]
       ports:
         - "5775:5775/udp"
         - "6831:6831/udp"
@@ -40,18 +54,65 @@ services:
         - jaeger-net
       depends_on:
         - jaeger-collector
+        - kaiju-collector
+
+    # jaeger-agent-f:
+    #   image: marioscrock/jaeger-agent
+    #   command: ["./main", "--collector.host-port=jaeger-collector:14267"]
+    #   ports:
+    #     - "5779:5778"
+    #   restart: on-failure
+    #   networks:
+    #     - jaeger-net
+    #   depends_on:
+    #     - jaeger-collector
+    #     - kaiju-collector
+
+    # jaeger-agent-r:
+    #   image: marioscrock/jaeger-agent
+    #   command: ["./main", "--collector.host-port=jaeger-collector:14267"]
+    #   ports:
+    #     - "5780:5778"
+    #   restart: on-failure
+    #   networks:
+    #     - jaeger-net
+    #   depends_on:
+    #     - jaeger-collector
+    #     - kaiju-collector
+
+    # jaeger-agent-c:
+    #   image: marioscrock/jaeger-agent
+    #   command: ["./main", "--collector.host-port=jaeger-collector:14267"]
+    #   ports:
+    #     - "5781:5778"
+    #   restart: on-failure
+    #   networks:
+    #     - jaeger-net
+    #   depends_on:
+    #     - jaeger-collector
+    #     - kaiju-collector
+
+    # jaeger-agent-d:
+    #   image: marioscrock/jaeger-agent
+    #   command: ["./main", "--collector.host-port=jaeger-collector:14267"]
+    #   ports:
+    #     - "5782:5778"
+    #   restart: on-failure
+    #   networks:
+    #     - jaeger-net
+    #   depends_on:
+    #     - jaeger-collector
+    #     - kaiju-collector
         
-    #jaeger-java-collector:
-    #  image: marioscrock/jaeger-java-collector
-    #  command: ["java","-jar","/usr/app/jaeger-0.0.1-SNAPSHOT-jar-with-dependencies.jar"]
-    #  ports:
-    #    - "2042:2042" 
-    #    - "4567:4567"
-    #  restart: on-failure
-    #  networks:
-    #    - jaeger-net
-    #  depends_on:
-    #    - jaeger-agent
+    kaiju-collector:
+     image: marioscrock/kaiju-collector
+     command: ["java","-jar","/usr/app/kaiju-0.0.1-SNAPSHOT-jar-with-dependencies.jar"]
+     ports:
+       - "2042:2042" 
+       - "4567:4567"
+     restart: on-failure
+     networks:
+       - jaeger-net
 
     cassandra:
       image: cassandra:3.9
@@ -59,7 +120,7 @@ services:
         - jaeger-net
 
     cassandra-schema:
-      image: jaegertracing/jaeger-cassandra-schema
+      image: jaegertracing/jaeger-cassandra-schema:1.5
       networks:
         - jaeger-net
       depends_on:
