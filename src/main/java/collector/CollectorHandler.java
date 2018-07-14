@@ -1,6 +1,10 @@
 package collector;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.thrift.TException;
 import org.eclipse.jetty.util.ConcurrentHashSet;
@@ -30,7 +34,8 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	private final static Logger log = LoggerFactory.getLogger(CollectorHandler.class);
 	
 	//Keep track of traces and processes already seen
-	public ConcurrentHashSet<thriftgen.Process> processesSeen = new ConcurrentHashSet<thriftgen.Process>();
+	public static ConcurrentHashSet<thriftgen.Process> processesSeen = new ConcurrentHashSet<thriftgen.Process>();
+	public static ConcurrentHashMap<String, Set<String>> tracesSeen = new ConcurrentHashMap<>();
 	
 	public int numbBatches = 0;
 	
@@ -43,8 +48,8 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	public EsperHandler esperHandler;
 	
 	public CollectorHandler() {
-		esperHandler = new EsperHandler();
-		esperHandler.initializeHandler();
+		//esperHandler = new EsperHandler();
+		//esperHandler.initializeHandler();
 	}
 	
 	@Override
@@ -53,13 +58,29 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 		for(Batch batch : batches) {
 			
 			numbBatches += 1;
-			log.info("Processing batch number: " + numbBatches + "\n #Processes seen: " + processesSeen.size());
+			log.info("Processing batch number: " + numbBatches + "\n#Processes seen: " + processesSeen.size());
+			log.info("\n#Traces seen: " + tracesSeen.keySet().size());
 			
 			try {
 				JsonTracesWS.sendBatch(batchToJson(batch)); 
 			} catch (Exception e) {
 				log.error(e.getMessage(), e);
 			}
+			
+			HashMap<Integer, Integer> sizes = new HashMap<>();
+			if (tracesSeen.keySet() != null) {
+				for(String t : tracesSeen.keySet()) {
+					int size = tracesSeen.get(t).size();
+					if (sizes.get(size) == null) 
+						sizes.put(size, 0);
+					sizes.put(size, sizes.get(size) + 1);
+				}
+			}
+			int nSpans = 0;
+			for(Integer i : sizes.keySet()) {
+				nSpans += i * sizes.get(i);
+			}
+			log.info("TOTAL: " + nSpans + " " + sizes.toString());
 			
 			//SERIALIZE BATCH to JSON
 			//BatchSerialize.numBatchToSerialize = 180;
@@ -241,6 +262,10 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			String traceIdHex = traceIdToHex(span.getTraceIdHigh(), span.getTraceIdLow());
 			String spanIdHex = Long.toHexString(span.getSpanId());
 			String id = traceIdHex + spanIdHex;
+			
+			if (tracesSeen.get(traceIdHex) == null)
+				tracesSeen.put(traceIdHex, new HashSet<>());
+			tracesSeen.get(traceIdHex).add(spanIdHex);
 			
 			//Data properties
 			jsonSpan.put("@id", PREFIX_SPAN + id);
@@ -428,7 +453,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 		
 		List<Batch> batches = request.getBody(Collector.submitBatches_args.class).getBatches();
 		
-		Thread t = new Thread(new Runnable() {
+		collector.Collector.executor.execute(new Runnable() {
 				
 			@Override
 			public void run() {
@@ -440,8 +465,6 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			}
 			
 		});
-		
-		t.run();
 		
 		return new ThriftResponse.Builder<Collector.submitBatches_result>(request)
 	            .setBody(new Collector.submitBatches_result())
