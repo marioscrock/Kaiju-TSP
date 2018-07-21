@@ -10,7 +10,7 @@ ADD jaeger/ $SRC_DIR
 RUN cd $SRC_DIR; cd cmd/agent/; go build main.go; cp main /app/
 
 # final stage
-FROM marioscrock/hotrod
+FROM alpine
 WORKDIR /app
-COPY --from=build-env /app/main /app/agent/
-COPY run.sh /app/
+COPY --from=build-env /app/main /app/
+#ENTRYPOINT ["./main"]
