@@ -9,10 +9,21 @@ import com.espertech.esper.client.UpdateListener;
 public class CEPListener implements UpdateListener {
 	
 	private final static Logger log = LoggerFactory.getLogger(CEPListener.class);
+	private String name;
+	
+	public CEPListener (String name) {
+		this.name = name;
+	}
 	
 	@Override
 	public void update(EventBean[] newData, EventBean[] oldData) {
-		log.info("Event received: " + newData[0].getUnderlying());
+		
+		StringBuilder sb = new StringBuilder();
+		for (EventBean e : newData)
+			sb.append(e.getUnderlying() + "\n");
+		
+		log.info("Event " + name + " " + sb.toString());
+		
 	}
 	
 

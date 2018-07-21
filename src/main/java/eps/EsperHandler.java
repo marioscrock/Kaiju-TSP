@@ -20,28 +20,36 @@ public class EsperHandler {
 	    
 	    // We register thriftgen classes as objects the engine will have to handle
 	    cepConfig.addEventType("Batch", Batch.class.getName());
-	    cepConfig.addEventType("Log", Log.class.getName());
-	    cepConfig.addEventType("Process", thriftgen.Process.class.getName());
 	    cepConfig.addEventType("Span", Span.class.getName());
-	    cepConfig.addEventType("SpanRef", SpanRef.class.getName());
-	    cepConfig.addEventType("Tag", Tag.class.getName());
 	 
-	   // We setup the engine
+	    // We setup the engine
 	    EPServiceProvider cep = EPServiceProviderManager.getProvider("myCEPEngine",cepConfig);
 	    
 	    cepRT = cep.getEPRuntime();
 	    
 	    // We register an EPL statement
 	    EPAdministrator cepAdm = cep.getEPAdministrator();
-	    EPStatement cepStatement = cepAdm.createEPL("select * from " +
-	                                    "Span(operationName='GetDriver').win:length(3) " +
-	                                    "having avg(duration) > 2");
-	    cepStatement.addListener(new CEPListener());
+	    cepAdm.createEPL("create context Trace partition by traceIdHigh and traceIdLow "
+				+ "from Span( operationName != \"HTTP GET /metrics\" )"
+				+ "terminated after 5 sec");
 	    
-	    EPStatement cepStatement2 = cepAdm.createEPL("select * from " +
-                "Tag(key='http.status_code') " +
-                "having VLong=200");
-	    cepStatement2.addListener(new CEPListener());
+	    EPStatement cepStatement = cepAdm.createEPL("context Trace select collector.CollectorHandler.traceIdToHex(traceIdHigh, traceIdLow) "
+	    		+ "as traceId, count(*) from Span output last when terminated");
+	    cepStatement.addListener(new CEPListener("#Span"));
+	    
+	    EPStatement cepStatement2 = cepAdm.createEPL("select count(*) from " +
+                "Batch");
+	    cepStatement2.addListener(new CEPListener("#Batches"));
+	   
+	 
+	    //cepAdm.createEPL("create context Operation partition by operationName from Span");
+	    cepAdm.createEPL("create table MeanDurationPerOperation (operationName string primary key, meanDuration avg(long))");
+	    cepAdm.createEPL("into table MeanDurationPerOperation select avg(duration) as meanDuration from Span"
+	    		+ " group by operationName");
+
+	    EPStatement cepStatement3 = cepAdm.createEPL("context Trace select collector.CollectorHandler.traceIdToHex(traceIdHigh, traceIdLow) "
+	    		+ "as traceId, operationName, duration, MeanDurationPerOperation[operationName].meanDuration as meanDuration from Span(duration > MeanDurationPerOperation[operationName].meanDuration)");
+	    cepStatement3.addListener(new CEPListener("Long latency than average"));
 	    
 	}
 	
@@ -55,37 +63,37 @@ public class EsperHandler {
 				
 				cepRT.sendEvent(span);
 				
-				if(span.getTags() != null) 
-					for(Tag tag : span.getTags())
-						cepRT.sendEvent(tag);
-				
-				if(span.getLogs() != null)
-					for(Log log : span.getLogs()) {
-						
-						cepRT.sendEvent(log);
-						
-						if(log.getFields() != null) 
-							for(Tag tag : log.getFields())
-								cepRT.sendEvent(tag);	
-						
-					}
-
-				if(span.getReferences() != null)
-					for(SpanRef spanRef : span.getReferences())
-						cepRT.sendEvent(spanRef);
+//				if(span.getTags() != null) 
+//					for(Tag tag : span.getTags())
+//						cepRT.sendEvent(tag);
+//				
+//				if(span.getLogs() != null)
+//					for(Log log : span.getLogs()) {
+//						
+//						cepRT.sendEvent(log);
+//						
+//						if(log.getFields() != null) 
+//							for(Tag tag : log.getFields())
+//								cepRT.sendEvent(tag);	
+//						
+//					}
+//
+//				if(span.getReferences() != null)
+//					for(SpanRef spanRef : span.getReferences())
+//						cepRT.sendEvent(spanRef);
 				
 			}
 		}
 		
-		if(batch.getProcess() != null) {
-			
-			cepRT.sendEvent(batch.getProcess());
-			
-			if(batch.getProcess().getTags() != null)
-				for(Tag tag : batch.getProcess().getTags())
-					cepRT.sendEvent(tag);
-	
-		}	
+//		if(batch.getProcess() != null) {
+//			
+//			cepRT.sendEvent(batch.getProcess());
+//			
+//			if(batch.getProcess().getTags() != null)
+//				for(Tag tag : batch.getProcess().getTags())
+//					cepRT.sendEvent(tag);
+//	
+//		}	
 	}
 
 }
