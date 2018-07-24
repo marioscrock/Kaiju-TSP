@@ -22,7 +22,7 @@ public class TimingCollector {
 		dataToWrite.add(record);
 		numbRecords.incrementAndGet();
 		
-		System.out.println(numbRecords.get());
+		System.out.println(filepath + " " + numbRecords.get());
 		//Save data to file
 		if (numbRecords.get() > 200) {
 			System.out.println("Saving");
@@ -45,7 +45,6 @@ public class TimingCollector {
 	public void saveData() throws IOException{
 		
 		String fp = this.getClass().getResource(filepath).getPath();
-
         FileWriter pw = new FileWriter(fp, true);
         
         synchronized (dataToWrite) {

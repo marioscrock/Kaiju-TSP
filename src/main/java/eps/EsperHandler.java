@@ -26,9 +26,13 @@ public class EsperHandler {
 	    EPServiceProvider cep = EPServiceProviderManager.getProvider("myCEPEngine",cepConfig);
 	    
 	    cepRT = cep.getEPRuntime();
+	    EPAdministrator cepAdm = cep.getEPAdministrator();
 	    
 	    // We register an EPL statement
-	    EPAdministrator cepAdm = cep.getEPAdministrator();
+	    EPStatement cepStatementSpans = cepAdm.createEPL("select collector.JsonDeserialize.traceIdToHex(traceIdHigh, traceIdLow) as traceId, Long.toHexString(spanId) as spanId, startTime, duration "
+	    		+ "from Span");
+	    cepStatementSpans.addListener(new CEPSpansTimingListener());
+	    
 	    cepAdm.createEPL("create context Trace partition by traceIdHigh and traceIdLow "
 				+ "from Span( operationName != \"HTTP GET /metrics\" )"
 				+ "terminated after 5 sec");
