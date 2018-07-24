@@ -33,7 +33,7 @@ public class EsperHandler {
 				+ "from Span( operationName != \"HTTP GET /metrics\" )"
 				+ "terminated after 5 sec");
 	    
-	    EPStatement cepStatement = cepAdm.createEPL("context Trace select collector.CollectorHandler.traceIdToHex(traceIdHigh, traceIdLow) "
+	    EPStatement cepStatement = cepAdm.createEPL("context Trace select collector.JsonDeserialize.traceIdToHex(traceIdHigh, traceIdLow) "
 	    		+ "as traceId, count(*) from Span output last when terminated");
 	    cepStatement.addListener(new CEPListener("#Span"));
 	    
@@ -47,7 +47,7 @@ public class EsperHandler {
 	    cepAdm.createEPL("into table MeanDurationPerOperation select avg(duration) as meanDuration from Span"
 	    		+ " group by operationName");
 
-	    EPStatement cepStatement3 = cepAdm.createEPL("context Trace select collector.CollectorHandler.traceIdToHex(traceIdHigh, traceIdLow) "
+	    EPStatement cepStatement3 = cepAdm.createEPL("context Trace select collector.JsonDeserialize.traceIdToHex(traceIdHigh, traceIdLow) "
 	    		+ "as traceId, operationName, duration, MeanDurationPerOperation[operationName].meanDuration as meanDuration from Span(duration > MeanDurationPerOperation[operationName].meanDuration)");
 	    cepStatement3.addListener(new CEPListener("Long latency than average"));
 	    
@@ -57,43 +57,10 @@ public class EsperHandler {
 		
 		cepRT.sendEvent(batch);
 		
-		if(batch.getSpans() != null) {
-			
-			for(Span span : batch.getSpans()) {
-				
-				cepRT.sendEvent(span);
-				
-//				if(span.getTags() != null) 
-//					for(Tag tag : span.getTags())
-//						cepRT.sendEvent(tag);
-//				
-//				if(span.getLogs() != null)
-//					for(Log log : span.getLogs()) {
-//						
-//						cepRT.sendEvent(log);
-//						
-//						if(log.getFields() != null) 
-//							for(Tag tag : log.getFields())
-//								cepRT.sendEvent(tag);	
-//						
-//					}
-//
-//				if(span.getReferences() != null)
-//					for(SpanRef spanRef : span.getReferences())
-//						cepRT.sendEvent(spanRef);
-				
-			}
-		}
+		if(batch.getSpans() != null) 		
+			for(Span span : batch.getSpans())
+				cepRT.sendEvent(span);	
 		
-//		if(batch.getProcess() != null) {
-//			
-//			cepRT.sendEvent(batch.getProcess());
-//			
-//			if(batch.getProcess().getTags() != null)
-//				for(Tag tag : batch.getProcess().getTags())
-//					cepRT.sendEvent(tag);
-//	
-//		}	
 	}
 
 }

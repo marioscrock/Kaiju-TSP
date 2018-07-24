@@ -15,7 +15,7 @@ import org.apache.thrift.TException;
 import com.google.gson.Gson;
 
 import thriftgen.Batch;
-import websocket.JsonTracesWS;
+//import websocket.JsonTracesWS;
 
 public class FakeCollector {
 	
@@ -26,9 +26,9 @@ public class FakeCollector {
 	public static void main(String[] args) {
 		
 		//Open WebSocket
-		JsonTracesWS ws = new JsonTracesWS();
-		Thread webSocketThread = new Thread(ws);
-    	webSocketThread.start();
+		//JsonTracesWS ws = new JsonTracesWS();
+		//Thread webSocketThread = new Thread(ws);
+    	//webSocketThread.start();
 		
 		Gson gson = new Gson();
 

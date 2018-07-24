@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import com.uber.tchannel.api.SubChannel;
 import com.uber.tchannel.api.TChannel;
 
-import websocket.JsonTracesWS;
 
 public class Collector {
 	
@@ -21,9 +20,9 @@ public class Collector {
 	public static void main(String[] args) throws InterruptedException {
 		
 		//Open WebSocket
-		JsonTracesWS ws = new JsonTracesWS();
-		Thread webSocketThread = new Thread(ws);
-    	webSocketThread.start();
+		//JsonTracesWS ws = new JsonTracesWS();
+		//Thread webSocketThread = new Thread(ws);
+    	//webSocketThread.start();
     	
     	//Executors
     	BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>();
@@ -40,8 +39,9 @@ public class Collector {
 		subCh.register("Collector::submitBatches", new CollectorHandler());
 		
 		log.info("Handler registered for Collector::submitBatches");
+		
 		// listen for incoming connections
-		tchannel.listen();//.channel().closeFuture().sync();
+		tchannel.listen(); //.channel().closeFuture().sync();
        //tchannel.shutdown(false);
 		
 	}
