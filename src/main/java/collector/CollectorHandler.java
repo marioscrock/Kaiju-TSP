@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.thrift.TException;
+import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +26,9 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	private AtomicInteger numbBatches = new AtomicInteger(0);
 	private TimingCollector thriftTimingCollector = new TimingCollector("/thriftTiming.csv");
 	
+	//Keep track of processes already seen
+	public static ConcurrentHashSet<thriftgen.Process> processesSeen = new ConcurrentHashSet<thriftgen.Process>();
+	
 	public CollectorHandler() {
 		esperHandler = new EsperHandler();
 		esperHandler.initializeHandler();
@@ -33,11 +37,39 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	@Override
 	public List<BatchSubmitResponse> submitBatches(List<Batch> batches) throws TException {
 		
+		log.info("Processing batch number: " + numbBatches + "\n#Processes seen: " + processesSeen.size());
+		
 		for(Batch batch : batches) {
 			
 			//ESPER
 			log.info("Batch to esper");
 			esperHandler.sendBatch(batch);
+			
+			thriftgen.Process process = batch.getProcess();
+				
+			//Must check equality through equalsProcess function
+			boolean seen = false;
+			if (processesSeen != null) {
+				
+				for (thriftgen.Process p : processesSeen)
+					if (JsonDeserialize.equalsProcess(process, p)) {				
+						seen = true;
+						break;				
+					} else if (JsonDeserialize.hashProcess(process) == JsonDeserialize.hashProcess(p)){
+						//If not equal as defined in equalsProcess check for colliding hashes
+						//TODO Specialize the exception type 
+						try {
+							throw new Exception("Colliding hash");
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}		
+			}
+			
+			if (!seen) {	
+				//PROCESS
+				processesSeen.add(process);	
+			}
 					
 //			try {
 //				JSONObject b = JsonDeserialize.batchToJson(batch);

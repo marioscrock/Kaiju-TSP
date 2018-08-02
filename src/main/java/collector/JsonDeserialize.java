@@ -3,11 +3,8 @@ package collector;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import thriftgen.Batch;
 import thriftgen.Log;
@@ -18,11 +15,6 @@ import thriftgen.Tag;
 import thriftgen.TagType;
 
 public class JsonDeserialize {
-	
-	private final static Logger log = LoggerFactory.getLogger(CollectorHandler.class);
-	
-	//Keep track of processes already seen
-	public static ConcurrentHashSet<thriftgen.Process> processesSeen = new ConcurrentHashSet<thriftgen.Process>();
 	
 	public static AtomicInteger numbBatches = new AtomicInteger(0); 
 	public static final String PREFIX_LOG = "tr:log_";
@@ -35,7 +27,6 @@ public class JsonDeserialize {
 	public static JSONObject batchToJson(Batch batch) throws Exception {
 		
 		numbBatches.getAndAdd(1);
-		log.info("Processing batch number: " + numbBatches + "\n#Processes seen: " + processesSeen.size());
 		
 		JSONObject obj = new JSONObject();
 		
@@ -43,30 +34,6 @@ public class JsonDeserialize {
 		
 		//Get processId related to the process
 		int processId = hashProcess(process);
-		
-		//Must check equal through equalsProcess function
-		boolean seen = false;
-		if (processesSeen != null) {
-			
-			for (thriftgen.Process p : processesSeen)
-				if (equalsProcess(process, p)) {				
-					seen = true;
-					break;				
-				} else if (hashProcess(process) == hashProcess(p)){
-					//If not equal as defined in equalsProcess check for colliding hashes
-					//TODO Specialize the exception type 
-					throw new Exception("Colliding hash");
-				}		
-		}
-		
-		if (!seen) {
-			
-			//PROCESS
-			//Generate Id by custom hash function and add process if NOT ALREADY SEEN
-			processId = hashProcess(process);
-			processesSeen.add(process);	
-					
-		}
 		
 		//Add JSONLD representation of process to obj
 		JSONObject jsonProcess = processToJson(process, Integer.toString(processId)); 
@@ -326,7 +293,7 @@ public class JsonDeserialize {
 	 * @return True if two processes are equal, processes are equals if same serviceName
 	 * and same tags(despite of their order). False otherwise.
 	 */
-	private static boolean equalsProcess(thriftgen.Process process1, thriftgen.Process process2) {
+	public static boolean equalsProcess(thriftgen.Process process1, thriftgen.Process process2) {
 			
 	    if (process1 == process2)
 	      return true;
@@ -362,7 +329,7 @@ public class JsonDeserialize {
 	
 	//Provides an hash for each Process, same hash if same serviceName
 	//and same tags(despite of their order)
-	private static int hashProcess(thriftgen.Process process) {
+	public static int hashProcess(thriftgen.Process process) {
 		
 		int result = 0;
 		//37 - must be prime
