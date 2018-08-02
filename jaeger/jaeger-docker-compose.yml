@@ -57,13 +57,27 @@ services:
     #     - jaeger-collector
     #     - kaiju-collector
         
+    # kaiju-collector:
+    #  image: marioscrock/kaiju-collector
+    #  command: ["java","-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-XX:MaxRAMFraction=1", "-jar","/usr/app/kaiju-0.0.1-SNAPSHOT-jar-with-dependencies.jar"]
+    #  mem_limit: 200M
+    #  ports:
+    #    - "2042:2042" 
+    #    - "4567:4567"
+    #  restart: on-failure
+    #  networks:
+    #    - jaeger-net
+
     kaiju-collector:
-     image: marioscrock/kaiju-collector
-     command: ["java","-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-XX:MaxRAMFraction=1", "-jar","/usr/app/kaiju-0.0.1-SNAPSHOT-jar-with-dependencies.jar"]
-     mem_limit: 200M
+     image: maven:3.5.4-jdk-8
      ports:
        - "2042:2042" 
        - "4567:4567"
+     volumes:
+      - /Users/Mario/eclipse-workspace/kaiju-collector:/opt/maven
+      - /Users/Mario/.m2:/root/.m2
+     working_dir: /opt/maven
+     command: mvn exec:java -Dexec.mainClass=collector.Collector
      restart: on-failure
      networks:
        - jaeger-net
