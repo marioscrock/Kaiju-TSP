@@ -20,8 +20,6 @@ import thriftgen.Collector;
 
 public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatches_args, Collector.submitBatches_result> implements Collector.Iface{
 	
-	public EsperHandler esperHandler;
-	
 	private final static Logger log = LoggerFactory.getLogger(CollectorHandler.class);
 	private AtomicInteger numbBatches = new AtomicInteger(0);
 	private TimingCollector thriftTimingCollector = new TimingCollector("/thriftTiming.csv");
@@ -30,8 +28,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	public static ConcurrentHashSet<thriftgen.Process> processesSeen = new ConcurrentHashSet<thriftgen.Process>();
 	
 	public CollectorHandler() {
-		esperHandler = new EsperHandler();
-		esperHandler.initializeHandler();
+		EsperHandler.initializeHandler();
 	}
 	
 	@Override
@@ -43,7 +40,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			
 			//ESPER
 			log.info("Batch to esper");
-			esperHandler.sendBatch(batch);
+			EsperHandler.sendBatch(batch);
 			
 			thriftgen.Process process = batch.getProcess();
 				

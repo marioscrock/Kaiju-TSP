@@ -35,8 +35,8 @@ while(True):
     traces = list(traces)
 
     #Print total number of traces considered
-    print(str(TimestampMicrosec64() - 60000000))
-    print("Num traces:" + str(len(traces)))
+    #print(str(TimestampMicrosec64() - 60000000))
+    #print("Num traces:" + str(len(traces)))
 
     for trace in traces:
 
@@ -45,8 +45,6 @@ while(True):
         data = r.json()
 
         tracesJson = data['data']
-        query = ""
-        referenceString = ""
 
         #Loop on the list of traces
         for i in range(len(tracesJson)):
@@ -57,19 +55,20 @@ while(True):
 
             traceJson = tracesJson[i]
             traceID = traceJson['traceID']
-
+            timestamp = str(TimestampMicrosec64())
+            
             #SPAN
             for span in traceJson['spans']:
                 
                 key = span['traceID'] + span['spanID']
                 if key not in rows:
                     #traceId, spanId, startTime, duration, eventTime
-                    row = span['traceID'] + ", " + span['spanID'] + ", " + str(span['startTime']) + ", " + str(span['duration']) + ", " + str(TimestampMicrosec64()) + "\n"
+                    row = span['traceID'] + ", " + span['spanID'] + ", " + str(span['startTime']) + ", " + str(span['duration']) + ", " + timestamp + "\n"
                     rows[key] = row
 
     
     if not traces:                      
-        fd = open('/Users/Mario/Desktop/jaegerTiming.csv','w')
+        fd = open('/Users/Mario/eclipse-workspace/kaiju-collector/jupyter/jaegerTiming.csv','w')
         for row in rows.keys():
             fd.write(rows[row])  
         fd.close()
