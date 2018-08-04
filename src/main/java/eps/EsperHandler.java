@@ -1,6 +1,10 @@
 package eps;
 
 import thriftgen.*;
+import thriftgen.Process;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import com.espertech.esper.client.Configuration;
 import com.espertech.esper.client.EPAdministrator;
@@ -9,11 +13,13 @@ import com.espertech.esper.client.EPServiceProvider;
 import com.espertech.esper.client.EPServiceProviderManager;
 import com.espertech.esper.client.EPStatement;
 
+import collector.JsonDeserialize;
+
 public class EsperHandler {
 	
-	private EPRuntime cepRT;
+	protected static EPRuntime cepRT;
 	
-	public void initializeHandler() {
+	public static void initializeHandler() {
 		
 		//The Configuration is meant only as an initialization-time object.
 	    Configuration cepConfig = new Configuration();
@@ -21,17 +27,35 @@ public class EsperHandler {
 	    // We register thriftgen classes as objects the engine will have to handle
 	    cepConfig.addEventType("Batch", Batch.class.getName());
 	    cepConfig.addEventType("Span", Span.class.getName());
+	    cepConfig.addEventType("Process", Process.class.getName());
+	    
+	    Map<String, Object> spanProcess = new HashMap<String, Object>();
+	    spanProcess.put("processHash", int.class);
+	    spanProcess.put("traceId", String.class);
+	    spanProcess.put("spanId", long.class);
+	    spanProcess.put("serviceName", String.class);
+	    cepConfig.addEventType("SpanProcess", spanProcess);
 	 
 	    // We setup the engine
-	    EPServiceProvider cep = EPServiceProviderManager.getProvider("myCEPEngine",cepConfig);
+	    EPServiceProvider cep = EPServiceProviderManager.getProvider("myCEPEngine", cepConfig);
 	    
 	    cepRT = cep.getEPRuntime();
 	    EPAdministrator cepAdm = cep.getEPAdministrator();
 	    
+	    cepAdm.createEPL("create window TracesWindow#unique(traceIdHex) (traceIdHex string)");
+	    cepAdm.createEPL("insert into TracesWindow(traceIdHex) select collector.JsonDeserialize.traceIdToHex(traceIdHigh, traceIdLow) from Span");
+	    
+	    cepAdm.createEPL("create table Processes (hashProcess int primary key, process thriftgen.Process)");
+	    cepAdm.createEPL("on Batch b merge Processes p where collector.JsonDeserialize.hashProcess(b.process) = p.hashProcess "
+	    		+ "when not matched then insert select collector.JsonDeserialize.hashProcess(process) as hashProcess, process");
+	    
+	    cepAdm.createEPL("create window SpansWindow#time(1 min) as (span thriftgen.Span, hashProcess int, serviceName string)");
+	    cepAdm.createEPL("insert into SpansWindow select s as span, sp.processHash as hashProcess, sp.serviceName as serviceName from Span#time(2 min) as s, SpanProcess#time(2 min) as sp where s.spanId = sp.spanId");
+	    
 	    // We register an EPL statement
 	    EPStatement cepStatementSpans = cepAdm.createEPL("select collector.JsonDeserialize.traceIdToHex(traceIdHigh, traceIdLow) as traceId, Long.toHexString(spanId) as spanId, startTime, duration "
 	    		+ "from Span");
-	    cepStatementSpans.addListener(new CEPSpansTimingListener());
+	    cepStatementSpans.addListener(new CEPSpansListener());
 	    
 	    cepAdm.createEPL("create context Trace partition by traceIdHigh and traceIdLow "
 				+ "from Span( operationName != \"HTTP GET /metrics\" )"
@@ -45,8 +69,7 @@ public class EsperHandler {
                 "Batch");
 	    cepStatement2.addListener(new CEPListener("#Batches"));
 	   
-	 
-	    //cepAdm.createEPL("create context Operation partition by operationName from Span");
+	
 	    cepAdm.createEPL("create table MeanDurationPerOperation (operationName string primary key, meanDuration avg(long))");
 	    cepAdm.createEPL("into table MeanDurationPerOperation select avg(duration) as meanDuration from Span"
 	    		+ " group by operationName");
@@ -55,16 +78,42 @@ public class EsperHandler {
 	    		+ "as traceId, operationName, duration, MeanDurationPerOperation[operationName].meanDuration as meanDuration from Span(duration > MeanDurationPerOperation[operationName].meanDuration)");
 	    cepStatement3.addListener(new CEPListener("Long latency than average"));
 	    
+	    Thread APIThread = new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				KaijuAPI.initAPI();	
+			}
+			
+		});
+	    
+	    APIThread.run();
+	    
 	}
 	
-	public void sendBatch(Batch batch) {
+	public static void sendBatch(Batch batch) {
 		
 		cepRT.sendEvent(batch);
 		
-		if(batch.getSpans() != null) 		
-			for(Span span : batch.getSpans())
-				cepRT.sendEvent(span);	
-		
+		if(batch.getSpans() != null) {
+			
+			int processHash = JsonDeserialize.hashProcess(batch.getProcess());
+			String serviceName = batch.getProcess().getServiceName();
+			
+			for(Span span : batch.getSpans()) {
+				
+				cepRT.sendEvent(span);
+				
+				// Create a SpanProcess event mapping span and processes
+				Map<String, Object> event = new HashMap<String, Object>();
+				event.put("processHash", processHash);
+				event.put("spanId", span.getSpanId());
+				event.put("traceId", JsonDeserialize.traceIdToHex(span.getTraceIdHigh(), span.getTraceIdLow()));
+				event.put("serviceName", serviceName);
+				cepRT.sendEvent(event, "SpanProcess");
+				
+			}
+		}
 	}
 
 }

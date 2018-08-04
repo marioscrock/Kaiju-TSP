@@ -7,7 +7,7 @@ import com.espertech.esper.client.UpdateListener;
 
 import collector.TimingCollector;
 
-public class CEPSpansTimingListener implements UpdateListener {
+public class CEPSpansListener implements UpdateListener {
 	
 	private TimingCollector spansTimingCollector = new TimingCollector("/spansTiming.csv");
 	

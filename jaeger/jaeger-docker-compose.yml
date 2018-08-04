@@ -73,6 +73,7 @@ services:
      ports:
        - "2042:2042" 
        - "4567:4567"
+       - "9278:9278"
      volumes:
       - /Users/Mario/eclipse-workspace/kaiju-collector:/opt/maven
       - /Users/Mario/.m2:/root/.m2
