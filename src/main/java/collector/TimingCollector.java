@@ -20,25 +20,27 @@ public class TimingCollector {
 	
 	public void addRecord(String[] record) {
 		dataToWrite.add(record);
-		numbRecords.incrementAndGet();
+		numbRecords.getAndIncrement();
 		
-		System.out.println(filepath + " " + numbRecords.get());
 		//Save data to file
-		if (numbRecords.get() > 200) {
-			System.out.println("Saving");
-			numbRecords.set(0);
-			collector.Collector.executor.execute(new Runnable() {
+		synchronized(numbRecords) {
+			if (numbRecords.get() > 200) {
 				
-				@Override
-				public void run() {
-					try {
-						saveData();
-					} catch (IOException e) {
-						e.printStackTrace();
+				System.out.println("Saving " + filepath + " " + numbRecords.get() + "records");
+				numbRecords.set(0);
+				collector.Collector.executor.execute(new Runnable() {
+					
+					@Override
+					public void run() {
+						try {
+							saveData();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
 					}
-				}
-				
-			});		
+					
+				});		
+			}
 		}
 	}
 	
