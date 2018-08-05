@@ -1,6 +1,7 @@
 import json
 import requests
 import sys
+import time
 from datetime import datetime
 
 def TimestampMicrosec64():
@@ -17,46 +18,57 @@ while(True):
     #for service in services:
 	#API request to retrieve list of traces related to a service in the precedent minute
     r = requests.get("http://localhost:9278/api/traces?service=frontend")
-    data = r.json()
-    for trace in data['spans']:
-        traces.append(trace['traceID'])
 
-    #Select unique traceIDs (a trace is seen by all services in the request flow)
-    traces = set(traces)
-    traces = list(traces)
-
-    #Print total number of traces considered
-    #print(str(TimestampMicrosec64() - 60000000))
-    #print("Num traces:" + str(len(traces)))
-
-    for trace in traces:
-
-    	#API Request to retrieve all data related to a trace 
-        r = requests.get('http://localhost:9278/api/traces/' + trace)
+    parseCheck = False
+    try:
         data = r.json()
+        parseCheck = True
+    except ValueError:
+        parseCheck = False;
+        print("Error parsing")
 
-        tracesJson = data['spans']
-        timestamp = str(TimestampMicrosec64())
+    if (parseCheck):
+        for trace in data['spans']:
+            traces.append(trace['traceID'])
 
-        #SPAN
-        for span in tracesJson:
-            
-            key = span['traceID'] + span['spanID']
-            if key not in rows:
-                #traceId, spanId, startTime, duration, eventTime
-                row = span['traceID'] + ", " + span['spanID'] + ", " + str(span['startTime']) + ", " + str(span['duration']) + ", " + timestamp + "\n"
-                rows[key] = row
+        #Select unique traceIDs (a trace is seen by all services in the request flow)
+        traces = set(traces)
+        traces = list(traces)
 
-    
-    if not traces:                      
-        fd = open('/Users/Mario/eclipse-workspace/kaiju-collector/jupyter/kaijuTiming.csv','w')
-        for row in rows.keys():
-            fd.write(rows[row])  
-        fd.close()
-        count += 1
-        if count > 100:
-            break
-    else:
-        count = 0
+        #Print total number of traces considered
+        #print(str(TimestampMicrosec64() - 60000000))
+        #print("Num traces:" + str(len(traces)))
+
+        for trace in traces:
+
+        	#API Request to retrieve all data related to a trace 
+            r = requests.get('http://localhost:9278/api/traces/' + trace)
+            data = r.json()
+
+            tracesJson = data['spans']
+            timestamp = str(TimestampMicrosec64())
+
+            #SPAN
+            for span in tracesJson:
+                
+                key = span['traceID'] + span['spanID']
+                if key not in rows:
+                    #traceId, spanId, startTime, duration, eventTime
+                    row = span['traceID'] + ", " + span['spanID'] + ", " + str(span['startTime']) + ", " + str(span['duration']) + ", " + timestamp + "\n"
+                    rows[key] = row
+
+        
+        if not traces:                      
+            count += 1
+            time.sleep(1)
+            if count > 60:
+                fd = open('/Users/Mario/eclipse-workspace/kaiju-collector/jupyter/kaijuTiming.csv','w')
+                for row in rows.keys():
+                    fd.write(rows[row])  
+                fd.close()
+                print("Records saved")
+                break
+        else:
+            count = 0
 
 

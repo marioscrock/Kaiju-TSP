@@ -1,6 +1,7 @@
 import json
 import requests
 import sys
+import time
 from datetime import datetime
 
 def TimestampMicrosec64():
@@ -27,8 +28,10 @@ while(True):
 	#API request to retrieve list of traces related to a service in the precedent minute
     r = requests.get("http://localhost:16686/api/traces?service=frontend&start=" + str(TimestampMicrosec64() - 60000000))
     data = r.json()
-    for trace in data['data']:
-        traces.append(trace['traceID'])
+
+    if data['data'] != None:
+        for trace in data['data']:
+            traces.append(trace['traceID'])
 
     #Select unique traceIDs (a trace is seen by all services in the request flow)
     traces = set(traces)
@@ -45,35 +48,38 @@ while(True):
         data = r.json()
 
         tracesJson = data['data']
+        timestamp = str(TimestampMicrosec64())
 
         #Loop on the list of traces
-        for i in range(len(tracesJson)):
+        if tracesJson != None:
+            for i in range(len(tracesJson)):
 
-            if (i > 0):
-            	#Probably is impossible to have more than one trace
-                print("ATTENTION more than one trace")
+                if (i > 0):
+                	#Probably is impossible to have more than one trace
+                    print("ATTENTION more than one trace")
 
-            traceJson = tracesJson[i]
-            traceID = traceJson['traceID']
-            timestamp = str(TimestampMicrosec64())
-            
-            #SPAN
-            for span in traceJson['spans']:
-                
-                key = span['traceID'] + span['spanID']
-                if key not in rows:
-                    #traceId, spanId, startTime, duration, eventTime
-                    row = span['traceID'] + ", " + span['spanID'] + ", " + str(span['startTime']) + ", " + str(span['duration']) + ", " + timestamp + "\n"
-                    rows[key] = row
+                traceJson = tracesJson[i]
+                traceID = traceJson['traceID']
+                        
+                #SPAN
+                for span in traceJson['spans']:
+                    
+                    key = span['traceID'] + span['spanID']
+                    if key not in rows:
+                        #traceId, spanId, startTime, duration, eventTime
+                        row = span['traceID'] + ", " + span['spanID'] + ", " + str(span['startTime']) + ", " + str(span['duration']) + ", " + timestamp + "\n"
+                        rows[key] = row
 
     
     if not traces:                      
-        fd = open('/Users/Mario/eclipse-workspace/kaiju-collector/jupyter/jaegerTiming.csv','w')
-        for row in rows.keys():
-            fd.write(rows[row])  
-        fd.close()
         count += 1
-        if count > 100:
+        time.sleep(1)
+        if count > 60:
+            fd = open('/Users/Mario/eclipse-workspace/kaiju-collector/jupyter/jaegerTiming.csv','w')
+            for row in rows.keys():
+                fd.write(rows[row])  
+            print("Records saved")
+            fd.close()
             break
     else:
         count = 0
