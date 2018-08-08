@@ -28,6 +28,9 @@ public class EsperHandler {
 	    cepConfig.addEventType("Batch", Batch.class.getName());
 	    cepConfig.addEventType("Span", Span.class.getName());
 	    cepConfig.addEventType("Process", Process.class.getName());
+	    cepConfig.addEventType("Log", Log.class.getName());
+	    cepConfig.addEventType("Tag", Tag.class.getName());
+	    cepConfig.addEventType("SpanRef", SpanRef.class.getName());
 	    
 	    Map<String, Object> spanProcess = new HashMap<String, Object>();
 	    spanProcess.put("processHash", int.class);
@@ -51,6 +54,22 @@ public class EsperHandler {
 	    
 	    cepAdm.createEPL("create window SpansWindow#time(1 min) as (span thriftgen.Span, hashProcess int, serviceName string)");
 	    cepAdm.createEPL("insert into SpansWindow select s as span, sp.processHash as hashProcess, sp.serviceName as serviceName from Span#time(2 min) as s, SpanProcess#time(2 min) as sp where s.spanId = sp.spanId");
+	    
+	    //SAMPLES Contained-Event Selection
+	    
+	    cepAdm.createEPL("create window LogsFields#time(1 min) as (spanId string, field thriftgen.Tag, timestamp long)");
+	    cepAdm.createEPL("insert into LogsFields select Long.toHexString(spanId) as spanId, f as field, timestamp as timestamp from " +
+        " Span[select spanId, timestamp from logs][select * from fields as f]"); 
+	    EPStatement cepStatementFields = cepAdm.createEPL("select count(*) from LogsFields as f where f.field.VStr=\"redis timeout\""); 
+	    cepStatementFields.addListener(new CEPListener("# Fields redis with window"));
+	 
+	    EPStatement cepStatementFields2 = cepAdm.createEPL("select operationName from " +
+	    " Span[select operationName, * from logs][select * from fields as f where f.VStr=\"redis timeout\"]"); 
+	    cepStatementFields2.addListener(new CEPListener("# Fields"));
+	    
+	    EPStatement cepStatementLogs = cepAdm.createEPL("select count(*) from " +
+                "Span[logs]");
+	    cepStatementLogs.addListener(new CEPListener("# Logs"));
 	    
 	    // We register an EPL statement
 	    EPStatement cepStatementSpans = cepAdm.createEPL("select collector.JsonDeserialize.traceIdToHex(traceIdHigh, traceIdLow) as traceId, Long.toHexString(spanId) as spanId, startTime, duration "
