@@ -27,6 +27,8 @@ public class KaijuAPI {
 	private static EPOnDemandPreparedQueryParameterized preparedSpansServiceName;
 	private static EPOnDemandPreparedQueryParameterized preparedSpansTraceId;
 	
+	private static EPOnDemandPreparedQueryParameterized preparedLogs ;
+	
 	public static void initPreparedQueries() {
 		
 		String queryTraces = "select * from TracesWindow"; 
@@ -39,6 +41,10 @@ public class KaijuAPI {
         String querySpansTraceId = "select * from SpansWindow "
 				+ "where collector.JsonDeserialize.traceIdToHex(span.traceIdHigh, span.traceIdLow) = ?"; 
         preparedSpansTraceId = EsperHandler.cepRT.prepareQueryWithParameters(querySpansTraceId);
+        
+        String queryLogs = "select distinct span.operationName from " +
+        	    " SpansWindow where span.getLogs().anyOf(l => l.getFields().anyOf(f => f.key = ?))"; 
+        preparedLogs = EsperHandler.cepRT.prepareQueryWithParameters(queryLogs);
         
 	}
 
@@ -168,6 +174,30 @@ public class KaijuAPI {
     		}
 	        
     		return "{ \"spans\":[]}";
+            
+        });
+        
+        get("/api/logs/:key", (request, response) -> {
+            
+    		String key = request.params(":key");
+    		EPOnDemandQueryResult result = null;
+
+			preparedLogs.setObject(1, key);
+	        	
+        	try {
+        		result = EsperHandler.cepRT.executeQuery(preparedLogs);
+        	} catch (Exception e) {
+    			log.info(e.getStackTrace().toString());
+    			log.info(e.getMessage());
+    		}
+    		
+    		StringBuilder sb = new StringBuilder();
+    		for (EventBean e : result.getArray())
+    			sb.append(e.getUnderlying() + "\n");
+            
+    		response.type("application/json");
+	        
+    		return "{ \"result\" : \"" + sb.toString() + "\"}";
             
         });
 
