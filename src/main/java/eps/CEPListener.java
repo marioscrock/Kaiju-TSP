@@ -19,10 +19,13 @@ public class CEPListener implements UpdateListener {
 	public void update(EventBean[] newData, EventBean[] oldData) {
 		
 		StringBuilder sb = new StringBuilder();
-		for (EventBean e : newData)
-			sb.append(e.getUnderlying() + "\n");
 		
-		log.info("Event " + name + " " + sb.toString());
+		if (newData != null) {
+			for (EventBean e : newData)
+				sb.append(e.getUnderlying() + "\n");
+		
+			log.info("Event " + name + " " + sb.toString());
+		}
 		
 	}
 	
