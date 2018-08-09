@@ -27,7 +27,8 @@ public class KaijuAPI {
 	private static EPOnDemandPreparedQueryParameterized preparedSpansServiceName;
 	private static EPOnDemandPreparedQueryParameterized preparedSpansTraceId;
 	
-	private static EPOnDemandPreparedQueryParameterized preparedLogs ;
+	private static EPOnDemandPreparedQueryParameterized preparedLogs;
+	private static EPOnDemandPreparedQueryParameterized preparedDependencies;
 	
 	public static void initPreparedQueries() {
 		
@@ -45,6 +46,13 @@ public class KaijuAPI {
         String queryLogs = "select distinct span.operationName from " +
         	    " SpansWindow where span.getLogs().anyOf(l => l.getFields().anyOf(f => f.key = ?))"; 
         preparedLogs = EsperHandler.cepRT.prepareQueryWithParameters(queryLogs);
+        
+        String queryDependencies = "select sFrom.serviceName as serviceFrom, sTo.serviceName as serviceTo, count(*) as numInteractions from"
+        	    + " DependenciesWindow(traceIdHexFrom = ?) as d, SpansWindow as sFrom,"
+        	    + " SpansWindow as sTo"
+        	    + " where sTo.span.spanId = d.spanIdTo and sFrom.span.spanId = d.spanIdFrom"
+        	    + " group by sFrom.serviceName, sTo.serviceName"; 
+        preparedDependencies = EsperHandler.cepRT.prepareQueryWithParameters(queryDependencies);
         
 	}
 
@@ -198,6 +206,47 @@ public class KaijuAPI {
     		response.type("application/json");
 	        
     		return "{ \"result\" : \"" + sb.toString() + "\"}";
+            
+        });
+        
+        get("/api/dependencies/:traceId", (request, response) -> {
+            
+    		String traceId = request.params(":traceId");
+    		EPOnDemandQueryResult result = null;
+
+			preparedDependencies.setObject(1, traceId);
+	        	
+        	try {
+        		result = EsperHandler.cepRT.executeQuery(preparedDependencies);
+        	} catch (Exception e) {
+    			log.info(e.getStackTrace().toString());
+    			log.info(e.getMessage());
+    		}
+    		
+        	response.type("application/json");
+    		if (result != null) 
+	            if (result.getArray().length > 0) {
+	            	
+	            	StringBuilder sb = new StringBuilder();
+	            	sb.append("{ \"dependencies\":[");
+	            	for (EventBean row : result.getArray()) {
+	            		sb.append(" { ");
+	    	    		sb.append("\"serviceFrom\" : ");
+	    	    		sb.append(" \"" + row.get("serviceFrom") + "\", ");
+	    	    		sb.append("\"serviceTo\" : ");
+	    	    		sb.append(" \"" + row.get("serviceTo") + "\", ");
+	    	    		sb.append("\"numInteractions\" : ");
+	    	    		sb.append(" \"" + row.get("numInteractions") + "\"");
+	    	    		sb.append("},");
+	            	}
+	            	sb.deleteCharAt(sb.length() - 1);
+	            	sb.append("] }");
+	            	
+	            	return sb.toString();
+	            	
+	            } 
+	        
+    		return "{ \"traceIDsHex\":[]}";
             
         });
 
