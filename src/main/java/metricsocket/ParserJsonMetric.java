@@ -23,13 +23,7 @@ public class ParserJsonMetric implements Runnable {
 		if (jObj.get("metrics") == null){	
 			
 			//Metric fields are now a map String:String
-			
-			//try {
-				MetricSocket.metrics.add(gson.fromJson(jsonToParse, Metric.class));
-			//} catch (NumberFormatException e) {
-			//	System.out.println("******************************************************************");
-			//	System.out.println(jsonToParse);
-			//}
+			MetricSocket.metrics.add(gson.fromJson(jsonToParse, Metric.class));
 			
 		} else {
 			

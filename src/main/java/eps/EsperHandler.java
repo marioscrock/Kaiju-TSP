@@ -3,6 +3,8 @@ package eps;
 import thriftgen.*;
 import thriftgen.Process;
 
+import org.eclipse.jetty.util.ConcurrentHashSet;
+
 import com.espertech.esper.client.Configuration;
 import com.espertech.esper.client.EPAdministrator;
 import com.espertech.esper.client.EPRuntime;
@@ -13,7 +15,9 @@ import com.espertech.esper.client.EPStatement;
 public class EsperHandler {
 	
 	protected static EPRuntime cepRT;
-	private static final String retentionTime = "2min";
+	protected static ConcurrentHashSet<String> traceIdHexSampling = new ConcurrentHashSet<>();
+	
+	private static final String retentionTime = "1min";
 	
 	public static void initializeHandler() {
 		
@@ -34,25 +38,30 @@ public class EsperHandler {
 	    cepRT = cep.getEPRuntime();
 	    EPAdministrator cepAdm = cep.getEPAdministrator();
 	    
+	    //TRACES WINDOW (traceIdHex)
 	    cepAdm.createEPL("create window TracesWindow#unique(traceIdHex)#time(" + retentionTime + ") (traceIdHex string)");
 	    cepAdm.createEPL("insert into TracesWindow(traceIdHex)"
 	    		+ " select collector.JsonDeserialize.traceIdToHex(traceIdHigh, traceIdLow)"
 	    		+ " from Span");
 	    
+	    //PROCESSES TABLE (hashProcess PK, process)
 	    cepAdm.createEPL("create table ProcessesTable (hashProcess int primary key, process thriftgen.Process)");
 	    cepAdm.createEPL("on Batch b merge ProcessesTable p"
 	    		+ " where collector.JsonDeserialize.hashProcess(b.process) = p.hashProcess"
 	    		+ " when not matched then insert select collector.JsonDeserialize.hashProcess(process) as hashProcess, process");
 	    
+	    //SPANS WINDOW (span, hashProcess, serviceName)
 	    cepAdm.createEPL("create window SpansWindow#time(" + retentionTime + ") as (span thriftgen.Span, hashProcess int, serviceName string)");
 	    cepAdm.createEPL("insert into SpansWindow"
 	    		+ " select s as span, collector.JsonDeserialize.hashProcess(p) as hashProcess, p.serviceName as serviceName"
 	    		+ " from Batch[select process as p, * from spans as s]");
 	    
+	    //ERROR LOG reporter
 	    EPStatement cepStatementErrorLogs = cepAdm.createEPL("select Long.toHexString(spanId) as spanId, f.* from " +
 	    " Span[select spanId, * from logs][select * from fields as f where f.key=\"error\"]"); 
 	    cepStatementErrorLogs.addListener(new CEPListener("Error: "));
 	    
+	    //DEPENDENCIES WINDOW (traceIdHexFrom, spanIdFrom, traceIdHexTo, spanIdTo)
 	    cepAdm.createEPL("create window DependenciesWindow#time(" + retentionTime + ") (traceIdHexFrom string,"
 	    		+ " spanIdFrom long, traceIdHexTo string, spanIdTo long)");
 	    cepAdm.createEPL("insert into DependenciesWindow"
@@ -62,13 +71,12 @@ public class EsperHandler {
 	    		+ " s.r.spanId as spanIdFrom"
 	    		+ " from SpansWindow[select span.spanId, span.traceIdLow, span.traceIdHigh,* from span.references as r] s");
 	    
-	    //spansTIMING --> REMOVE?
-//	    EPStatement cepStatementSpans = cepAdm.createEPL("select collector.JsonDeserialize.traceIdToHex(traceIdHigh, traceIdLow) as traceId, Long.toHexString(spanId) as spanId, startTime, duration "
-//	    		+ "from Span");
-//	    cepStatementSpans.addListener(new CEPSpansListener());
+	    //TAIL SAMPLING
+	    EPStatement cepStatementTailSampling = cepAdm.createEPL("select rstream * from SpansWindow");
+	    cepStatementTailSampling.addListener(new CEPTailSamplingListener());
 	    
 	    EPStatement cepStatementSpansCount = cepAdm.createEPL("select count(*) from " +
-                "Span output last every 10 sec");
+                "Span output last every 20 sec");
 	    cepStatementSpansCount.addListener(new CEPListener("#Span"));
 	   
 	    cepAdm.createEPL("create table MeanDurationPerOperation (serviceName string primary key, operationName string primary key,"
@@ -79,11 +87,11 @@ public class EsperHandler {
 	    		+ " group by serviceName, span.operationName");
 
 	    EPStatement cepStatementOperationDuration = cepAdm.createEPL("select collector.JsonDeserialize.traceIdToHex(span.traceIdHigh, span.traceIdLow)"
-	    		+ " as traceId, Long.toHexString(span.spanId), span.operationName, span.duration,"
-	    		+ " (MeanDurationPerOperation[serviceName, span.operationName].meanDuration + 2 * MeanDurationPerOperation[serviceName, span.operationName].stdDevDuration) as stdDurationPlus2MeanDev"
+	    		+ " as traceId, Long.toHexString(span.spanId) as spanId, span.operationName as operation, span.duration as duration,"
+	    		+ " (MeanDurationPerOperation[serviceName, span.operationName].meanDuration + 4 * MeanDurationPerOperation[serviceName, span.operationName].stdDevDuration) as stdDurationPlus4MeanDev"
 	    		+ " from SpansWindow"
-	    		+ " where span.duration > (MeanDurationPerOperation[serviceName, span.operationName].meanDuration + 2 * MeanDurationPerOperation[serviceName, span.operationName].stdDevDuration)");
-	    cepStatementOperationDuration.addListener(new CEPListener("Long latency than average + 2* std deviation"));
+	    		+ " where span.duration > (MeanDurationPerOperation[serviceName, span.operationName].meanDuration + 4 * MeanDurationPerOperation[serviceName, span.operationName].stdDevDuration)");
+	    cepStatementOperationDuration.addListener(new CEPListenerToBeSampled("Long latency than average + 4* std deviation"));
 	    
 	    Thread APIThread = new Thread(new Runnable() {
 			

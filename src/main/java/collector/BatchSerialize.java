@@ -31,7 +31,7 @@ public class BatchSerialize {
 	        PrintWriter file;
 			try {
 				
-				file = new PrintWriter (new FileWriter("/Users/Mario/Desktop/dumpTraces.json"));
+				file = new PrintWriter (new FileWriter("./dumpTraces.json"));
 				
 				StringBuilder b = new StringBuilder();
 				b.append("[");

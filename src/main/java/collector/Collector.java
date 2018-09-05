@@ -41,8 +41,8 @@ public class Collector {
 		log.info("Handler registered for Collector::submitBatches");
 		
 		// listen for incoming connections
-		tchannel.listen(); //.channel().closeFuture().sync();
-       //tchannel.shutdown(false);
+		tchannel.listen().channel().closeFuture().sync(); //tchannel.listen()
+        tchannel.shutdown();
 		
 	}
 

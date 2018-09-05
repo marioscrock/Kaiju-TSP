@@ -25,11 +25,6 @@ public class FakeCollector {
 
 	public static void main(String[] args) {
 		
-		//Open WebSocket
-		//JsonTracesWS ws = new JsonTracesWS();
-		//Thread webSocketThread = new Thread(ws);
-    	//webSocketThread.start();
-		
 		Gson gson = new Gson();
 
 		InputStream in = FakeCollector.class.getResourceAsStream("/dumpTraces.json");

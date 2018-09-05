@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.thrift.TException;
-import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,53 +20,26 @@ import thriftgen.Collector;
 public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatches_args, Collector.submitBatches_result> implements Collector.Iface{
 	
 	private final static Logger log = LoggerFactory.getLogger(CollectorHandler.class);
-	private AtomicInteger numbBatches = new AtomicInteger(0);
-	private TimingCollector thriftTimingCollector = new TimingCollector("/thriftTiming.csv");
 	
-	//Keep track of processes already seen
-	public static ConcurrentHashSet<thriftgen.Process> processesSeen = new ConcurrentHashSet<thriftgen.Process>();
-	
+	private RecordCollector thriftTimingCollector;
+	private AtomicInteger numbBatches;
+		
 	public CollectorHandler() {
+		thriftTimingCollector = new RecordCollector("./thriftTiming.csv", 200);
+		numbBatches = new AtomicInteger(0);
 		EsperHandler.initializeHandler();
 	}
 	
 	@Override
 	public List<BatchSubmitResponse> submitBatches(List<Batch> batches) throws TException {
 		
-		log.info("Processing batch number: " + numbBatches + "\n#Processes seen: " + processesSeen.size());
-		
 		for(Batch batch : batches) {
 			
 			//ESPER
 			log.info("Batch to esper");
 			EsperHandler.sendBatch(batch);
-			
-			thriftgen.Process process = batch.getProcess();
-				
-			//Must check equality through equalsProcess function
-			boolean seen = false;
-			if (processesSeen != null) {
-				
-				for (thriftgen.Process p : processesSeen)
-					if (JsonDeserialize.equalsProcess(process, p)) {				
-						seen = true;
-						break;				
-					} else if (JsonDeserialize.hashProcess(process) == JsonDeserialize.hashProcess(p)){
-						//If not equal as defined in equalsProcess check for colliding hashes
-						//TODO Specialize the exception type 
-						try {
-							throw new Exception("Colliding hash");
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-					}		
-			}
-			
-			if (!seen) {	
-				//PROCESS
-				processesSeen.add(process);	
-			}
-					
+
+//			log.info("Batch to JsonLD to WebSocket");
 //			try {
 //				JSONObject b = JsonDeserialize.batchToJson(batch);
 //				JsonTracesWS.sendBatch(b); 

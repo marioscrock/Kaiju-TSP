@@ -252,7 +252,7 @@ public class KaijuAPI {
 
     }
     
-	private static String spanFromEB(EventBean e) {
+	public static String spanFromEB(EventBean e) {
     	
     	Span s = (Span) e.get("span");
     	

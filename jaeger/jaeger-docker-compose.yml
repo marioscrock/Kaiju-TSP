@@ -64,6 +64,7 @@ services:
     #  ports:
     #    - "2042:2042" 
     #    - "4567:4567"
+    #    - "9278:9278"
     #  restart: on-failure
     #  networks:
     #    - jaeger-net
