@@ -28,13 +28,13 @@ public class JsonTracesWS implements Runnable {
     static Set<Session> clientSet;
     static AtomicBoolean queueOn; 
     static Thread pullingQueue;
+    static boolean context = false;
+    static String contextPath;
     
     private static JSONObject jsonContext;
     private static BlockingQueue<JSONObject> queue;
-    
-    public static boolean context = false;
-    
-    @Override
+
+	@Override
 	public void run() {
     	
     	clientSet = ConcurrentHashMap.newKeySet();
@@ -47,7 +47,7 @@ public class JsonTracesWS implements Runnable {
 	
 	    	Object obj = null;
 			try {
-				InputStream in = getClass().getResourceAsStream("/tracing_ontology_context.json");
+				InputStream in = getClass().getResourceAsStream(contextPath);
 				obj = parser.parse(new BufferedReader(new InputStreamReader(in)));
 	        } catch (IOException | ParseException e) {
 	            e.printStackTrace();
@@ -133,7 +133,11 @@ public class JsonTracesWS implements Runnable {
         
 		broadcastMessage(msg);
                  
-
     }
+    
+	public static void setContext(boolean context, String contextPath) {
+		JsonTracesWS.context = context;
+		JsonTracesWS.contextPath = contextPath;
+	}
 
 }
