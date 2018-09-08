@@ -3,7 +3,8 @@ package eps;
 import thriftgen.*;
 import thriftgen.Process;
 
-import org.eclipse.jetty.util.ConcurrentHashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.espertech.esper.client.Configuration;
 import com.espertech.esper.client.EPAdministrator;
@@ -15,7 +16,8 @@ import com.espertech.esper.client.EPStatement;
 public class EsperHandler {
 	
 	protected static EPRuntime cepRT;
-	protected static ConcurrentHashSet<String> traceIdHexSampling = new ConcurrentHashSet<>();
+
+	protected static Set<String> traceIdHexSampling = ConcurrentHashMap.newKeySet();
 	
 	private static final String retentionTime = "1min";
 	

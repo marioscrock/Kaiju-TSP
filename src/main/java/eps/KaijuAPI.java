@@ -1,8 +1,5 @@
 package eps;
 
-import static spark.Spark.get;
-import static spark.Spark.port;
-
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -14,6 +11,7 @@ import com.espertech.esper.client.EPOnDemandQueryResult;
 import com.espertech.esper.client.EventBean;
 
 import collector.JsonDeserialize;
+import spark.Service;
 import thriftgen.Log;
 import thriftgen.Span;
 import thriftgen.SpanRef;
@@ -57,12 +55,13 @@ public class KaijuAPI {
 	}
 
     public static void initAPI() {
-
+    	
     	initPreparedQueries();
     	
-    	port(9278);
+    	Service http = Service.ignite()
+    			.port(9278);
 
-    	get("/api/traces/all", (request, response) -> {
+    	http.get("/api/traces/all", (request, response) -> {
             
     		EPOnDemandQueryResult result = null;
     		
@@ -93,7 +92,7 @@ public class KaijuAPI {
             
         });
 
-        get("/api/traces", (request, response) -> {
+        http.get("/api/traces", (request, response) -> {
         	response.type("application/json");
 	        
 	        String serviceName = request.queryParams("service");
@@ -138,7 +137,7 @@ public class KaijuAPI {
 		    
 		});
         
-        get("/api/traces/:id", (request, response) -> {
+        http.get("/api/traces/:id", (request, response) -> {
             response.type("application/json");
             
             String traceId = request.params(":id");
@@ -185,7 +184,7 @@ public class KaijuAPI {
             
         });
         
-        get("/api/logs/:key", (request, response) -> {
+        http.get("/api/logs/:key", (request, response) -> {
             
     		String key = request.params(":key");
     		EPOnDemandQueryResult result = null;
@@ -209,7 +208,7 @@ public class KaijuAPI {
             
         });
         
-        get("/api/dependencies/:traceId", (request, response) -> {
+        http.get("/api/dependencies/:traceId", (request, response) -> {
             
     		String traceId = request.params(":traceId");
     		EPOnDemandQueryResult result = null;

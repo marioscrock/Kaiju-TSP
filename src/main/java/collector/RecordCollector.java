@@ -3,21 +3,21 @@ package collector;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.eclipse.jetty.util.ConcurrentHashSet;
 
 public class RecordCollector {
 	
 	private final int BUFFER_SIZE;
 	
-	private ConcurrentHashSet<String[]> dataToWrite;
+	private Set<String[]> dataToWrite;
 	private String filepath;
 	private AtomicInteger numbRecords; 
 	
 	
 	public RecordCollector (String filepath, int bufferSize) {	
-		dataToWrite = new ConcurrentHashSet<>();
+		dataToWrite = ConcurrentHashMap.newKeySet();
 		numbRecords = new AtomicInteger(0);
 		this.BUFFER_SIZE = bufferSize;
 		this.filepath = filepath;

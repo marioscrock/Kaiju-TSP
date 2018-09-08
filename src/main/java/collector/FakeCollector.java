@@ -16,6 +16,7 @@ import com.google.gson.Gson;
 
 import thriftgen.Batch;
 //import websocket.JsonTracesWS;
+import websocket.JsonTracesWS;
 
 public class FakeCollector {
 	
@@ -23,7 +24,14 @@ public class FakeCollector {
 	private static List<Batch> batches = new ArrayList<>();
 	private static CollectorHandler ch = new CollectorHandler();
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
+		
+		//Open WebSocket
+		JsonTracesWS ws = new JsonTracesWS();
+		Thread webSocketThread = new Thread(ws);
+    	webSocketThread.start();
+    	
+    	Thread.sleep(10000);
 		
 		Gson gson = new Gson();
 
@@ -32,7 +40,7 @@ public class FakeCollector {
 		batches = Arrays.asList(batchesArray);
 		
 		final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-	    executorService.scheduleAtFixedRate(FakeCollector::sendBatch, 0, 1000, TimeUnit.MICROSECONDS);
+	    executorService.scheduleAtFixedRate(FakeCollector::sendBatch, 0, 500, TimeUnit.MILLISECONDS);
 	  
 		return;
 

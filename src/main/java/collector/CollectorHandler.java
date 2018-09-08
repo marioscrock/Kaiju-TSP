@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.thrift.TException;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +17,7 @@ import eps.EsperHandler;
 import thriftgen.Batch;
 import thriftgen.BatchSubmitResponse;
 import thriftgen.Collector;
+import websocket.JsonTracesWS;
 
 public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatches_args, Collector.submitBatches_result> implements Collector.Iface{
 	
@@ -39,13 +41,13 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			log.info("Batch to esper");
 			EsperHandler.sendBatch(batch);
 
-//			log.info("Batch to JsonLD to WebSocket");
-//			try {
-//				JSONObject b = JsonDeserialize.batchToJson(batch);
-//				JsonTracesWS.sendBatch(b); 
-//			} catch (Exception e) {
-//				log.error(e.getMessage(), e);
-//			}
+			log.info("Batch to JsonLD to WebSocket");
+			try {
+				JSONObject b = JsonDeserialize.batchToJson(batch);
+				JsonTracesWS.sendBatch(b); 
+			} catch (Exception e) {
+				log.error(e.getMessage(), e);
+			}
 			
 //			//SERIALIZE BATCH to JSON
 //			BatchSerialize.numBatchToSerialize = 180;

@@ -9,7 +9,6 @@ public class WebSocketHandler {
     @OnWebSocketConnect
     public void onConnect(Session client) throws Exception {
         JsonTracesWS.clientSet.add(client);
-        JsonTracesWS.broadcastMessage("Hello!");
     }
 
     @OnWebSocketClose
