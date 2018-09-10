@@ -36,7 +36,7 @@ public class JsonDeserialize {
 		int processId = hashProcess(process);
 		
 		//Add JSONLD representation of process to obj
-		JSONObject jsonProcess = processToJson(process, Integer.toString(processId)); 
+		JSONObject jsonProcess = processToJson(process, Integer.toString(processId), true); 
 		obj.put("Process", jsonProcess);
 		
 		if (batch.getSpans() != null) {
@@ -53,34 +53,40 @@ public class JsonDeserialize {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static JSONObject processToJson(thriftgen.Process process, String processId) {
+	private static JSONObject processToJson(thriftgen.Process process, String processId, boolean addTags) {
 		
 		JSONObject jsonProcess = new JSONObject();
 		jsonProcess.put("@id", PREFIX_PROCESS + processId);
 		jsonProcess.put("serviceName", process.getServiceName());
 		
-		//Add Tags of the process to the json (create once for processes NOT ALREADY SEEN)
-		JSONArray jsonTags = tagsToJson(process.getTags());	
-		jsonProcess.put("hasProcessTag", jsonTags);
+		if (addTags) {
 			
-		//We assume tags created once for process in batchToJson function
-		List<Tag> tags = process.getTags();
-		for(Tag tag : tags) {
+			//Add Tags of the process to the json (create once for processes)
+			JSONArray jsonTags = tagsToJson(process.getTags());	
+			jsonProcess.put("hasProcessTag", jsonTags);
 			
-			String id = tag.getKey();
+		} else {
+		
+			//We assume tags created once for process in batchToJson function
+			List<Tag> tags = process.getTags();
+			for(Tag tag : tags) {
+				
+				String id = tag.getKey();
+				
+				if (tag.vType.equals(TagType.STRING))
+					id += tag.vStr;
+				else if (tag.vType.equals(TagType.DOUBLE))
+					id += tag.vDouble;
+				else if (tag.vType.equals(TagType.BOOL))
+					id += tag.vBool;
+				else if (tag.vType.equals(TagType.LONG))
+					id += tag.vLong;
+				else if (tag.vType.equals(TagType.BINARY))
+					id += tag.vBinary;
+				
+				jsonProcess.put("hasProcessTag", PREFIX_TAG + r(id));
 			
-			if (tag.vType.equals(TagType.STRING))
-				id += tag.vStr;
-			else if (tag.vType.equals(TagType.DOUBLE))
-				id += tag.vDouble;
-			else if (tag.vType.equals(TagType.BOOL))
-				id += tag.vBool;
-			else if (tag.vType.equals(TagType.LONG))
-				id += tag.vLong;
-			else if (tag.vType.equals(TagType.BINARY))
-				id += tag.vBinary;
-			
-			jsonProcess.put("hasProcessTag", PREFIX_TAG + r(id));
+			}
 		}
 		
 		return jsonProcess;
