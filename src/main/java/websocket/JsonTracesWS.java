@@ -58,7 +58,7 @@ public class JsonTracesWS implements Runnable {
 	    }
         
     	Service http = Service.ignite();
-        http.webSocket("/jsonTraces", WebSocketHandler.class);
+        http.webSocket("/streams/jsonTraces", WebSocketHandler.class);
         http.init();
         
 	}
