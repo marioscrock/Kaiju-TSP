@@ -1,6 +1,8 @@
 package tchannel
 
 import (
+
+	"os"
 	"time"
 
 	"github.com/uber/tchannel-go"
@@ -20,7 +22,7 @@ type KaijuReporter struct {
 func NewKaiju(zlogger *zap.Logger) *KaijuReporter {
 	var channel *tchannel.Channel
 	channel, _ = tchannel.NewChannel("kaiju-collector", nil)
-	channel.Peers().Add("kaiju-collector:2042")
+	channel.Peers().Add(os.Getenv("KAIJU_ADDRESS"))
 	thriftClient := thrift.NewClient(channel, "kaiju-collector", nil)
 	jClient := jaeger.NewTChanCollectorClient(thriftClient)
 	return &KaijuReporter{
