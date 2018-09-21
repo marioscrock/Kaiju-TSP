@@ -1,10 +1,12 @@
-package eps;
+package eps.listener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.espertech.esper.client.EventBean;
 import com.espertech.esper.client.UpdateListener;
+
+import eps.EsperHandler;
 
 public class CEPListenerToBeSampled implements UpdateListener {
 	
