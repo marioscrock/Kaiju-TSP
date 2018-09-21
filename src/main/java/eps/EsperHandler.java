@@ -13,11 +13,16 @@ import com.espertech.esper.client.EPServiceProvider;
 import com.espertech.esper.client.EPServiceProviderManager;
 import com.espertech.esper.client.EPStatement;
 
+import eps.listener.CEPListener;
+import eps.listener.CEPListenerToBeSampled;
+import eps.listener.CEPTailSamplingListener;
+
 public class EsperHandler {
 	
 	protected static EPRuntime cepRT;
+	protected static EPAdministrator cepAdm;
 
-	protected static Set<String> traceIdHexSampling = ConcurrentHashMap.newKeySet();
+	public static Set<String> traceIdHexSampling = ConcurrentHashMap.newKeySet();
 	
 	private static final String retentionTime = "1min";
 	
@@ -38,7 +43,7 @@ public class EsperHandler {
 	    EPServiceProvider cep = EPServiceProviderManager.getProvider("myCEPEngine", cepConfig);
 	    
 	    cepRT = cep.getEPRuntime();
-	    EPAdministrator cepAdm = cep.getEPAdministrator();
+	    cepAdm = cep.getEPAdministrator();
 	    
 	    //TRACES WINDOW (traceIdHex)
 	    cepAdm.createEPL("create window TracesWindow#unique(traceIdHex)#time(" + retentionTime + ") (traceIdHex string)");
@@ -76,10 +81,6 @@ public class EsperHandler {
 	    //TAIL SAMPLING
 	    EPStatement cepStatementTailSampling = cepAdm.createEPL("select rstream * from SpansWindow");
 	    cepStatementTailSampling.addListener(new CEPTailSamplingListener());
-	    
-	    EPStatement cepStatementSpansCount = cepAdm.createEPL("select count(*) from " +
-                "Span output last every 20 sec");
-	    cepStatementSpansCount.addListener(new CEPListener("#Span"));
 	   
 	    cepAdm.createEPL("create table MeanDurationPerOperation (serviceName string primary key, operationName string primary key,"
 	    		+ " meanDuration avg(long), stdDevDuration stddev(long))");
