@@ -10,6 +10,27 @@ import spark.Response;
 
 public class KaijuAPIHandler {
 	
+	public static String fireQuery(Request request, Response response) {
+		
+		String query = request.queryParams("query");
+		EPOnDemandQueryResult result = EsperHandler.cepRT.executeQuery(query);
+		
+		response.type("application/json");
+		response.status(200);
+		
+		StringBuilder sb = new StringBuilder();
+		
+		response.type("application/json");
+		if (result != null) 
+            if (result.getArray().length > 0) {
+            	for (EventBean e : result.getArray())
+            		sb.append(e.getUnderlying() + "\n");
+		}
+		
+		return "{ \"result\":\"" + sb.toString() + "\"}"; 
+		
+	}
+	
 	public static String registerStatement(Request request, Response response) {
 		
 		EPStatement statement = EsperHandler.cepAdm.createEPL(request.queryParams("statement"));

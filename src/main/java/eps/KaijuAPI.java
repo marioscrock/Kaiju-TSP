@@ -19,8 +19,11 @@ public class KaijuAPI {
 					+ "\"message\":\"" + e.getMessage() + "\""
 					+ "}");
 		});
+		
+		// POST /api/query?query=<query>
+    	http.post("/api/query", (request, response) -> KaijuAPIHandler.fireQuery(request, response));
     	
-		// POST /api/statement
+		// POST /api/statement?statement=<statement>&msg=<msg>
     	http.post("/api/statement", (request, response) -> KaijuAPIHandler.registerStatement(request, response));
     	
     	// POST /api/remove
