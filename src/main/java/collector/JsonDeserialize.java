@@ -1,7 +1,6 @@
 package collector;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -16,7 +15,6 @@ import thriftgen.TagType;
 
 public class JsonDeserialize {
 	
-	public static AtomicInteger numbBatches = new AtomicInteger(0); 
 	public static final String PREFIX_LOG = "tr:log_";
 	public static final String PREFIX_PROCESS = "tr:process_";
 	public static final String PREFIX_SPAN = "tr:span_";
@@ -25,8 +23,6 @@ public class JsonDeserialize {
 	
 	@SuppressWarnings("unchecked")
 	public static JSONObject batchToJson(Batch batch) throws Exception {
-		
-		numbBatches.getAndAdd(1);
 		
 		JSONObject obj = new JSONObject();
 		

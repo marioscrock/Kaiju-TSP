@@ -12,7 +12,7 @@ import thriftgen.Tag;
 
 public class EventToJsonConverter {
 	
-public static String spanFromEB(EventBean e) {
+	public static String spanFromEB(EventBean e) {
     	
     	Span s = (Span) e.get("span");
     	
