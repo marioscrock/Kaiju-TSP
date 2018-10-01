@@ -24,10 +24,12 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	private final static Logger log = LoggerFactory.getLogger(CollectorHandler.class);
 	
 	private RecordCollector thriftTimingCollector;
+	private RecordCollector jsonTimingCollector;
 	private AtomicInteger numbBatches;
 		
 	public CollectorHandler() {
 		thriftTimingCollector = new RecordCollector("./thriftTiming.csv", 200);
+		jsonTimingCollector = new RecordCollector("./jsonTiming.csv", 200);
 		numbBatches = new AtomicInteger(0);
 		EsperHandler.initializeHandler();
 	}
@@ -38,13 +40,12 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 		for(Batch batch : batches) {
 			
 			//ESPER
-			log.info("Batch to esper");
+			//log.info("Batch to esper");
 			EsperHandler.sendBatch(batch);
 
-			log.info("Batch to JsonLD to WebSocket");
+			//log.info("Batch to JsonLD to WebSocket");
 			try {
-				JSONObject b = JsonDeserialize.batchToJson(batch);
-				JsonTracesWS.sendBatch(b); 
+				JsonTracesWS.sendBatch(batchToJson(batch)); 
 			} catch (Exception e) {
 				log.error(e.getMessage(), e);
 			}
@@ -57,6 +58,19 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			
 		return null;
 		
+	}
+	
+	private JSONObject batchToJson(Batch batch) throws Exception {
+		
+		String[] timing = new String[3];
+		timing[1] = Long.toString(Instant.now().toEpochMilli());
+		JSONObject b = JsonDeserialize.batchToJson(batch);
+		timing[2] = Long.toString(Instant.now().toEpochMilli());
+		timing[0] = Integer.toString(numbBatches.get());
+
+		jsonTimingCollector.addRecord(timing);
+		
+		return b;
 	}
 	
 	private List<Batch> deserialize(ThriftRequest<Collector.submitBatches_args> request) {
