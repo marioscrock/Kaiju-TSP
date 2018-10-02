@@ -102,6 +102,14 @@ public class EsperHandler {
 	    		+ " where span.duration > (MeanDurationPerOperation[serviceName, span.operationName].meanDuration + 4 * MeanDurationPerOperation[serviceName, span.operationName].stdDevDuration)");
 	    cepStatementOperationDuration.addListener(new CEPListenerToBeSampled("Long latency than average + 4* std deviation"));
 	    
+	    //EVENTS listener
+	    EPStatement cepEvents = cepAdm.createEPL("select * from Event"); 
+	    cepEvents.addListener(new CEPListener("Event: "));
+	    
+	    //METRICS listener
+	    EPStatement cepMetrics = cepAdm.createEPL("select * from Metric"); 
+	    cepMetrics.addListener(new CEPListener("Metric: "));
+	    
 	    Thread APIThread = new Thread(new Runnable() {
 			
 			@Override
