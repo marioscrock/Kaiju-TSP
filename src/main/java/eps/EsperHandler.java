@@ -16,6 +16,8 @@ import com.espertech.esper.client.EPStatement;
 import eps.listener.CEPListener;
 import eps.listener.CEPListenerToBeSampled;
 import eps.listener.CEPTailSamplingListener;
+import eventsocket.Event;
+import eventsocket.Metric;
 
 public class EsperHandler {
 	
@@ -38,6 +40,10 @@ public class EsperHandler {
 	    cepConfig.addEventType("Log", Log.class.getName());
 	    cepConfig.addEventType("Tag", Tag.class.getName());
 	    cepConfig.addEventType("SpanRef", SpanRef.class.getName());
+	    
+	    // We register metrics and events as objects the engine will have to handle
+	    cepConfig.addEventType("Metric", Metric.class.getName());
+	    cepConfig.addEventType("Event", Event.class.getName());
 	 
 	    // We setup the engine
 	    EPServiceProvider cep = EPServiceProviderManager.getProvider("myCEPEngine", cepConfig);
@@ -119,6 +125,18 @@ public class EsperHandler {
 				cepRT.sendEvent(span);			
 			}
 		}
+	}
+	
+	public static void sendMetric(Metric metric) {
+		
+		cepRT.sendEvent(metric);
+		
+	}
+	
+	public static void sendEvent(Event event) {
+
+		cepRT.sendEvent(event);
+		
 	}
 
 }

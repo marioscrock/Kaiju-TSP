@@ -1,6 +1,6 @@
-package metricsocket;
+package eventsocket;
 
-public class ParserJsonMetricTest {
+public class ParserJsonTest {
 	
 	public static void main(String[] args) throws InterruptedException {
 		
@@ -49,14 +49,37 @@ public class ParserJsonMetricTest {
 				"    ]\n" + 
 				"}";
 		
-		Thread t1 = new Thread(new ParserJsonMetric(s1));
-		Thread t2 = new Thread(new ParserJsonMetric(s2));
-		t1.start();
-		t2.start();
-		t1.join();
-		t2.join();
+		String s3 = " {\n" + 
+				"    \"events\": [\n" + 
+				"        {\n" + 
+				"            \"event\": {\n" + 
+				"                \"event\": \"Commit\",\n" + 
+				"                \"commit_msg\": \"Fix connection pool\"\n" + 
+				"            }\n" + 
+				"		},\n" +
+				"      {\n" + 
+				"            \"event\": {\n" + 
+				"                \"event\": \"Alert_CPU\",\n" + 
+				"                \"alert_msg\": \"HighCPUUsage\"\n" + 
+
+				"            }\n" + 
+				"      }\n" + 
+				"    ]\n" + 
+				"}";
 		
-		System.out.println(MetricSocket.metrics);
+		System.out.println(s1);
+		System.out.println(s2);
+		System.out.println(s3);
+		
+//		Thread t1 = new Thread(new ParserJson(s1));
+//		Thread t2 = new Thread(new ParserJson(s2));
+//		Thread t3 = new Thread(new ParserJson(s3));
+//		t1.start();
+//		t2.start();
+//		t3.start();
+//		t1.join();
+//		t2.join();
+//		t3.join();
 
 	}
 

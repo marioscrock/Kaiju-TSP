@@ -50,9 +50,6 @@ public class RecordCollector {
         
 	        synchronized (dataToWrite) {
 		        Iterator<String[]> s = dataToWrite.iterator();
-		        if (s.hasNext()==false){
-		            System.out.println("Empty");
-		        }
 		        while(s.hasNext()){      	       		
 		        		String[] current  = s.next();
 		        		

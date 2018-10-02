@@ -1,4 +1,4 @@
-package metricsocket;
+package eventsocket;
 
 import java.util.HashMap;
 import java.util.Map;

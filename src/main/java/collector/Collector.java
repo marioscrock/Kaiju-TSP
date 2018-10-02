@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.uber.tchannel.api.SubChannel;
 import com.uber.tchannel.api.TChannel;
 
+import eventsocket.EventSocket;
 import websocket.JsonTracesWS;
 
 
@@ -41,6 +42,11 @@ public class Collector {
 		subCh.register("Collector::submitBatches", new CollectorHandler());
 		
 		log.info("Handler registered for Collector::submitBatches");
+		
+		//Open Events and Metrics Socket
+    	EventSocket es = new EventSocket();
+    	Thread eventSocketThread = new Thread(es);
+    	eventSocketThread.start();
 		
 		// listen for incoming connections
 		tchannel.listen().channel().closeFuture().sync(); //tchannel.listen()
