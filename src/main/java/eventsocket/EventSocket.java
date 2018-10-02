@@ -10,7 +10,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class EventSocket implements Runnable {
+	
+	private final static Logger log = LoggerFactory.getLogger(EventSocket.class);
 	
 	@Override
 	public void run() {
@@ -25,21 +30,24 @@ public class EventSocket implements Runnable {
 			Socket clientSocket = serverSocket.accept();
 			BufferedReader inputReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 			
-			System.out.println("Starting socket");
+			log.info("Starting socket");
 			
-			while (true) {
-				String line = inputReader.readLine();
-				System.out.println(line);
+			String line;
+			while ((line = inputReader.readLine()) != null) {
 				executor.execute(new ParserJson(line));
 			}
 			
 		} catch (IOException e) {
-			e.printStackTrace();
-		}finally{
+			log.info(e.getClass().getSimpleName());
+			log.info(e.getMessage());
+		} finally {
 			try {
-				serverSocket.close();	
+				serverSocket.close();
+		    	Thread eventSocketThread = new Thread(this);
+		    	eventSocketThread.start();
 			} catch (IOException e) {
-				e.printStackTrace();
+				log.info(e.getClass().getSimpleName());
+				log.info(e.getMessage());
 			}
 		}
 	}   
