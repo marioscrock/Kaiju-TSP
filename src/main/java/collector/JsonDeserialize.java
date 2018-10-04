@@ -98,7 +98,7 @@ public class JsonDeserialize {
 			
 			JSONObject jsonTag = new JSONObject();
 			String id = tag.getKey();
-			jsonTag.put("key", tag.getKey());
+			jsonTag.put("tagKey", tag.getKey());
 			
 			if (tag.getVType().equals(TagType.STRING)){
 				jsonTag.put("stringVal", tag.getVStr());
