@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.uber.tchannel.api.SubChannel;
 import com.uber.tchannel.api.TChannel;
 
+import eps.EsperHandler;
 import eventsocket.EventSocket;
 import websocket.JsonTracesWS;
 
@@ -23,13 +24,19 @@ public class Collector {
 	public static void main(String[] args) throws InterruptedException {
 		
 		//Open WebSocket
-		JsonTracesWS ws = new JsonTracesWS();
-		Thread webSocketThread = new Thread(ws);
-    	webSocketThread.start();
-    	
+//		JsonTracesWS ws = new JsonTracesWS();
+//		Thread webSocketThread = new Thread(ws);
+//    	webSocketThread.start();
+		
+		//Set retention time Esper
+		if(args.length == 1) {
+			EsperHandler.retentionTime = args[0];
+			log.info("Esper retention time set: " + args[0]);
+		}
+
     	//Executors
     	BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>();
-    	executor = new ThreadPoolExecutor(3, 3,
+    	executor = new ThreadPoolExecutor(5, 5,
     			10000, TimeUnit.MILLISECONDS, workQueue);
     	log.info("Executors pool initialised");
 		
@@ -40,7 +47,6 @@ public class Collector {
 
 		SubChannel subCh = tchannel.makeSubChannel("kaiju-collector");
 		subCh.register("Collector::submitBatches", new CollectorHandler());
-		
 		log.info("Handler registered for Collector::submitBatches");
 		
 		//Open Events and Metrics Socket
