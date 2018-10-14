@@ -6,11 +6,8 @@ import org.slf4j.LoggerFactory;
 import com.espertech.esper.client.EventBean;
 import com.espertech.esper.client.UpdateListener;
 
-import collector.JsonDeserialize;
 import collector.RecordCollector;
-import eps.EsperHandler;
 import eps.EventToJsonConverter;
-import thriftgen.Span;
 
 public class CEPTailSamplingListener implements UpdateListener {
 	
@@ -24,17 +21,10 @@ public class CEPTailSamplingListener implements UpdateListener {
             if (newData.length > 0) {
             	
             	for (EventBean e : newData) {
-            		
-                	Span s = (Span) e.get("span");
-                	String traceIdHex = JsonDeserialize.traceIdToHex(s.getTraceIdHigh(), s.getTraceIdLow());
-                	if (EsperHandler.traceIdHexSampling.contains(traceIdHex)) {
-                		
-                		String[] record = new String[1];
-                		record[0] = EventToJsonConverter.spanFromEB(e);
-                		sampledCollector.addRecord(record);
-                		log.info("Trace " + traceIdHex + " sampled");
-                		
-                	}
+            		String[] record = new String[1];
+            		record[0] = EventToJsonConverter.spanFromEB(e);
+            		sampledCollector.addRecord(record);
+            		//log.info("Span  sampled");
             	}
             } 
         } catch (Exception e) {
