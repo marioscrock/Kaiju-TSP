@@ -5,6 +5,7 @@ import "fmt"
 import "bufio"
 import "os"
 
+//Example: {"events":[{"event":{"commit":"32fsdf3234","commitMsg":"Wrong commit!","type":"CommitEvent"}}]}
 func main() {
 
   // connect to this socket
