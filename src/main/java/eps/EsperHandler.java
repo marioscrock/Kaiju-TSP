@@ -90,16 +90,23 @@ public class EsperHandler {
 	    		+ " from SpansWindow[select span.spanId, span.traceIdLow, span.traceIdHigh,* from span.references as r] s");
 	   
 	    cepAdm.createEPL("create table MeanDurationPerOperation (serviceName string primary key, operationName string primary key,"
-	    		+ " meanDuration avg(long), stdDevDuration stddev(long))");
-	    cepAdm.createEPL("into table MeanDurationPerOperation select avg(span.duration) as meanDuration,"
-	    		+ " stddev(span.duration) as stdDevDuration"
-	    		+ " from SpansWindow"
-	    		+ " group by serviceName, span.operationName");
-	    EPStatement tableDuration = cepAdm.createEPL("select serviceName, operationName, meanDuration, stdDevDuration"
+	    		+ " meanDuration double, m2 double, counter long, delta double)");
+	    cepAdm.createEPL("on SpansWindow s"
+	    		+ " merge MeanDurationPerOperation m"
+	    		+ " where s.serviceName = m.serviceName and s.span.operationName = m.operationName"
+	    		+ " when matched"
+	    		+ " then update set counter = (counter + 1), delta = (span.duration - meanDuration) "
+	    		+ " then update set meanDuration = (meanDuration + (delta/counter))"
+	    		+ " then update set m2 = (m2 + (span.duration - meanDuration)*delta)"
+	    		+ " when not matched"
+	    		+ " then insert select s.serviceName as serviceName, s.span.operationName as operationName,"
+	    		+ " s.span.duration as meanDuration, (s.span.duration / 4) as m2, 1 as counter");
+	    
+	    EPStatement tableDuration = cepAdm.createEPL("select serviceName, operationName, meanDuration, (m2/counter) as variance"
 	    		+ " from MeanDurationPerOperation"
 	    		+ " output snapshot every 5 seconds"
 	    		+ " order by meanDuration desc");
-	    //tableDuration.addListener(new CEPListener("Top-k operation duration: "));
+	    tableDuration.addListener(new CEPListener("Top-k operation duration: "));
 	    
 	    //RESOURCE USAGE ATTRIBUTION
 	    EPStatement resourceUsageStatementCustomer = cepAdm.createEPL("select customerId,"
@@ -115,7 +122,7 @@ public class EsperHandler {
 	    		+ " where s1.traceIdHigh = s2.traceIdHigh and s1.traceIdLow = s2.traceIdLow"
 	    		+ " group by customerId"
 	    		+ " output last every 10 seconds");//+ " output every " + retentionTime + "");
-	    resourceUsageStatementCustomer.addListener(new CEPListener("TimeCPURouteCalcperCustomerId: "));
+	    //resourceUsageStatementCustomer.addListener(new CEPListener("TimeCPURouteCalcperCustomerId: "));
 	    
 	    EPStatement resourceUsageStatementCustomer2 = cepAdm.createEPL("select "
 	    		+ " s1.logs.firstOf(l => l.fields.anyOf(f => f.key ='customer_id')).getFields().firstOf(f => f.key ='customer_id').getVStr() as customerId,"
@@ -127,7 +134,7 @@ public class EsperHandler {
 	    		+ " and s2.logs.anyOf(l => l.fields.anyOf(f => f.getVStr() ='RouteCalc'))"
 	    		+ " group by s1.logs.firstOf(l => l.fields.anyOf(f => f.key ='customer_id')).getFields().firstOf(f => f.key ='customer_id').getVStr()"
 	    		+ " output last every 10 seconds");
-	    resourceUsageStatementCustomer2.addListener(new CEPListener("CHECK IT: "));
+	    //resourceUsageStatementCustomer2.addListener(new CEPListener("CHECK IT: "));
 	    
 	    EPStatement resourceUsageStatementSession = cepAdm.createEPL("select sessionId,"
 	    		+ " sum(time) as timeCPURouteCalcperSessionId"
@@ -142,7 +149,7 @@ public class EsperHandler {
 	    		+ " where s1.traceIdHigh = s2.traceIdHigh and s1.traceIdLow = s2.traceIdLow"
 	    		+ " group by sessionId"
 	    		+ " output last every 10 seconds");//+ " output every " + retentionTime + "");
-	    resourceUsageStatementSession.addListener(new CEPListener("TimeCPURouteCalcperSessionId: "));
+	    //resourceUsageStatementSession.addListener(new CEPListener("TimeCPURouteCalcperSessionId: "));
 	    
 	    EPStatement resourceUsageStatementSession2 = cepAdm.createEPL("select "
 	    		+ " s1.logs.firstOf(l => l.fields.anyOf(f => f.getVStr() ='session')).getFields().firstOf(f => f.key ='value').getVStr() as sessionId,"
@@ -154,7 +161,7 @@ public class EsperHandler {
 	    		+ " and s2.logs.anyOf(l => l.fields.anyOf(f => f.getVStr() ='RouteCalc'))"
 	    		+ " group by s1.logs.firstOf(l => l.fields.anyOf(f => f.getVStr() ='session')).getFields().firstOf(f => f.key ='value').getVStr()"
 	    		+ " output last every 10 seconds");//+ " output every " + retentionTime + "");
-	    resourceUsageStatementSession2.addListener(new CEPListener("CHECK IT: "));
+	    //resourceUsageStatementSession2.addListener(new CEPListener("CHECK IT: "));
 	    
 	    cepAdm.createEPL("create table TracesToBeSampled (traceId string primary key)");
 	    cepAdm.createEPL("on TraceAnomaly a"
@@ -164,20 +171,22 @@ public class EsperHandler {
 	    		+ " then insert into TracesToBeSampled select a.traceId as traceId");
 	    
 	    //Three-sigma rule to detech anomalies (info https://en.wikipedia.org/wiki/68–95–99.7_rule)
-	    cepAdm.createEPL(""
+	    EPStatement cepStatementHighLatencies1 =cepAdm.createEPL(""
 	    		+ " insert into HighLatency3SigmaRule"
 	    		+ " select collector.JsonDeserialize.traceIdToHex(span.traceIdHigh, span.traceIdLow) as traceId,"
 	    		+ " Long.toHexString(span.spanId) as spanId, serviceName, span.operationName as operationName,"
 	    		+ " span.startTime as startTime, span.duration as duration, p.hostname as hostname"
 	    		+ " from SpansWindow as s join ProcessesTable as p"
-	    		+ " where s.hashProcess = p.hashProcess and java.lang.Math.abs(span.duration - MeanDurationPerOperation[serviceName, span.operationName].meanDuration) > (3 * MeanDurationPerOperation[serviceName, span.operationName].stdDevDuration)");
+	    		+ " where s.hashProcess = p.hashProcess and java.lang.Math.abs(span.duration - MeanDurationPerOperation[serviceName, span.operationName].meanDuration) >"
+	    		+ " (3 * (MeanDurationPerOperation[serviceName, span.operationName].m2 / MeanDurationPerOperation[serviceName, span.operationName].counter))");
+	    cepStatementHighLatencies1.addListener(new CEPListener("Here: "));
 	    
 	    EPStatement cepStatementHighLatencies = cepAdm.createEPL("select * from HighLatency3SigmaRule");
 	    cepStatementHighLatencies.addListener(new CEPListenerHighLatencies());
 	    
 	    //TAIL SAMPLING
 	    EPStatement cepStatementTailSampling = cepAdm.createEPL("select rstream * from SpansWindow as s where exists (select * from TracesToBeSampled where traceId = (collector.JsonDeserialize.traceIdToHex(s.span.traceIdHigh, s.span.traceIdLow)))");
-	    cepStatementTailSampling.addListener(new CEPTailSamplingListener());    
+	    //cepStatementTailSampling.addListener(new CEPTailSamplingListener());    
 	    
 	    //EVENTS listener
 	    EPStatement cepEvents = cepAdm.createEPL("select * from Event"); 
