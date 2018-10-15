@@ -7,11 +7,11 @@ import com.espertech.esper.client.UpdateListener;
 
 import collector.RecordCollector;
 
-public class CEPListenerAnomalies implements UpdateListener {
+public class CEPListenerHighLatencies implements UpdateListener {
 	
 	private RecordCollector anomaliesCollector;
 	
-	public CEPListenerAnomalies() {
+	public CEPListenerHighLatencies() {
 		anomaliesCollector = new RecordCollector("./anomalies.csv", 0);
 	}
 	

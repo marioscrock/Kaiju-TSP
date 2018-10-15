@@ -11,7 +11,7 @@ import com.espertech.esper.client.EPServiceProviderManager;
 import com.espertech.esper.client.EPStatement;
 
 import eps.listener.CEPListener;
-import eps.listener.CEPListenerAnomalies;
+import eps.listener.CEPListenerHighLatencies;
 import eps.listener.CEPTailSamplingListener;
 import eventsocket.Event;
 import eventsocket.Metric;
@@ -47,9 +47,10 @@ public class EsperHandler {
 	    cepAdm = cep.getEPAdministrator();
 	    
 	    //DEFINE EVENTS
-	    cepAdm.createEPL("create schema Anomaly(traceId string)");
+	    cepAdm.createEPL("create schema Anomaly()");
+	    cepAdm.createEPL("create schema TraceAnomaly(traceId string) inherits Anomaly");
 	    cepAdm.createEPL("create schema HighLatency3SigmaRule(serviceName string, operationName string,"
-	    		+ " spanId string, duration long, startTime long, hostname string) inherits Anomaly");
+	    		+ " spanId string, duration long, startTime long, hostname string) inherits TraceAnomaly");
 	    
 	    cepAdm.createEPL("create schema SystemEvent(timestamp long)");
 	    cepAdm.createEPL("create schema CommitEvent(commit string, commitMsg string) inherits SystemEvent");
@@ -61,10 +62,11 @@ public class EsperHandler {
 	    		+ " from Span");
 	    
 	    //PROCESSES TABLE (hashProcess PK, process)
-	    cepAdm.createEPL("create table ProcessesTable (hashProcess int primary key, process thriftgen.Process)");
+	    cepAdm.createEPL("create table ProcessesTable (hashProcess int primary key, process thriftgen.Process, hostname string)");
 	    cepAdm.createEPL("on Batch b merge ProcessesTable p"
 	    		+ " where collector.JsonDeserialize.hashProcess(b.process) = p.hashProcess"
-	    		+ " when not matched then insert select collector.JsonDeserialize.hashProcess(process) as hashProcess, process");
+	    		+ " when not matched then insert select collector.JsonDeserialize.hashProcess(process) as hashProcess, process,"
+	    		+ " process.tags.firstOf(t => t.key = 'hostname').getVStr() as hostname");
 	    
 	    //SPANS WINDOW (span, hashProcess, serviceName)
 	    cepAdm.createEPL("create window SpansWindow#time(" + retentionTime + ") as (span thriftgen.Span, hashProcess int, serviceName string)");
@@ -93,29 +95,85 @@ public class EsperHandler {
 	    		+ " stddev(span.duration) as stdDevDuration"
 	    		+ " from SpansWindow"
 	    		+ " group by serviceName, span.operationName");
-	    EPStatement tableDuration= cepAdm.createEPL("select serviceName, operationName, meanDuration, stdDevDuration"
+	    EPStatement tableDuration = cepAdm.createEPL("select serviceName, operationName, meanDuration, stdDevDuration"
 	    		+ " from MeanDurationPerOperation"
 	    		+ " output snapshot every 5 seconds"
 	    		+ " order by meanDuration desc");
-	    //tableDuration.addListener(new CEPListener("Latencies: "));
+	    //tableDuration.addListener(new CEPListener("Top-k operation duration: "));
+	    
+	    //RESOURCE USAGE ATTRIBUTION
+	    EPStatement resourceUsageStatementCustomer = cepAdm.createEPL("select customerId,"
+	    		+ " sum(time) as timeCPURouteCalcperCustomerId"
+	    		+ " from Span(operationName = \"HTTP GET /customer\")"
+	    		+ "[select traceIdHigh, traceIdLow, l.getFields().firstOf(f => f.key ='customer_id').getVStr() as customerId"
+	    		+ " from logs as l where l.fields.anyOf(f => f.key='customer_id')]"
+	    		+ "#time(" + retentionTime + ") as s1,"
+	    		+ " Span(operationName = \"HTTP GET /route\")"
+	    		+ "[select traceIdHigh, traceIdLow, l.getFields().firstOf(f => f.key ='time').getVDouble() as time"
+	    		+ " from logs as l where l.fields.anyOf(f => f.getVStr() ='RouteCalc')]"
+	    		+ "#time(" + retentionTime + ") as s2"
+	    		+ " where s1.traceIdHigh = s2.traceIdHigh and s1.traceIdLow = s2.traceIdLow"
+	    		+ " group by customerId"
+	    		+ " output last every 10 seconds");//+ " output every " + retentionTime + "");
+	    resourceUsageStatementCustomer.addListener(new CEPListener("TimeCPURouteCalcperCustomerId: "));
+	    
+	    EPStatement resourceUsageStatementCustomer2 = cepAdm.createEPL("select "
+	    		+ " s1.logs.firstOf(l => l.fields.anyOf(f => f.key ='customer_id')).getFields().firstOf(f => f.key ='customer_id').getVStr() as customerId,"
+	    		+ " sum(s2.logs.firstOf(l => l.fields.anyOf(f => f.getVStr() ='RouteCalc')).getFields().firstOf(f => f.key ='time').getVDouble()) as timeCPURouteCalcperCustomerId"
+	    		+ " from Span(operationName = \"HTTP GET /customer\")#time(" + retentionTime + ") as s1,"
+	    		+ " Span(operationName = \"HTTP GET /route\")#time(" + retentionTime + ") as s2"
+	    		+ " where s1.traceIdHigh = s2.traceIdHigh and s1.traceIdLow = s2.traceIdLow"
+	    		+ " and s1.logs.anyOf(l => l.fields.anyOf(f => f.key ='customer_id'))"
+	    		+ " and s2.logs.anyOf(l => l.fields.anyOf(f => f.getVStr() ='RouteCalc'))"
+	    		+ " group by s1.logs.firstOf(l => l.fields.anyOf(f => f.key ='customer_id')).getFields().firstOf(f => f.key ='customer_id').getVStr()"
+	    		+ " output last every 10 seconds");
+	    resourceUsageStatementCustomer2.addListener(new CEPListener("CHECK IT: "));
+	    
+	    EPStatement resourceUsageStatementSession = cepAdm.createEPL("select sessionId,"
+	    		+ " sum(time) as timeCPURouteCalcperSessionId"
+	    		+ " from Span(operationName = \"Driver::findNearest\")"
+	    		+ "[select traceIdHigh, traceIdLow, l.getFields().firstOf(f => f.key='value').getVStr() as sessionId"
+	    		+ " from logs as l where l.fields.anyOf(f => f.getVStr()='session')]"
+	    		+ "#time(" + retentionTime + ") as s1,"
+	    		+ " Span(operationName = \"HTTP GET /route\")"
+	    		+ "[select traceIdHigh, traceIdLow, l.getFields().firstOf(f => f.key ='time').getVDouble() as time"
+	    		+ " from logs as l where l.fields.anyOf(f => f.getVStr()='RouteCalc')]"
+	    		+ "#time(" + retentionTime + ") as s2"
+	    		+ " where s1.traceIdHigh = s2.traceIdHigh and s1.traceIdLow = s2.traceIdLow"
+	    		+ " group by sessionId"
+	    		+ " output last every 10 seconds");//+ " output every " + retentionTime + "");
+	    resourceUsageStatementSession.addListener(new CEPListener("TimeCPURouteCalcperSessionId: "));
+	    
+	    EPStatement resourceUsageStatementSession2 = cepAdm.createEPL("select "
+	    		+ " s1.logs.firstOf(l => l.fields.anyOf(f => f.getVStr() ='session')).getFields().firstOf(f => f.key ='value').getVStr() as sessionId,"
+	    		+ " sum(s2.logs.firstOf(l => l.fields.anyOf(f => f.getVStr() ='RouteCalc')).getFields().firstOf(f => f.key ='time').getVDouble()) as timeCPURouteCalcperSessionId"
+	    		+ " from Span(operationName = \"Driver::findNearest\")#time(" + retentionTime + ") as s1,"
+	    		+ " Span(operationName = \"HTTP GET /route\")#time(" + retentionTime + ") as s2"
+	    		+ " where s1.traceIdHigh = s2.traceIdHigh and s1.traceIdLow = s2.traceIdLow"
+	    		+ " and s1.logs.anyOf(l => l.fields.anyOf(f => f.getVStr() ='session'))"
+	    		+ " and s2.logs.anyOf(l => l.fields.anyOf(f => f.getVStr() ='RouteCalc'))"
+	    		+ " group by s1.logs.firstOf(l => l.fields.anyOf(f => f.getVStr() ='session')).getFields().firstOf(f => f.key ='value').getVStr()"
+	    		+ " output last every 10 seconds");//+ " output every " + retentionTime + "");
+	    resourceUsageStatementSession2.addListener(new CEPListener("CHECK IT: "));
 	    
 	    cepAdm.createEPL("create table TracesToBeSampled (traceId string primary key)");
-	    cepAdm.createEPL("on Anomaly a"
+	    cepAdm.createEPL("on TraceAnomaly a"
 	    		+ " merge TracesToBeSampled t"
 	    		+ " where a.traceId = t.traceId"
 	    		+ " when not matched"
 	    		+ " then insert into TracesToBeSampled select a.traceId as traceId");
 	    
 	    //Three-sigma rule to detech anomalies (info https://en.wikipedia.org/wiki/68–95–99.7_rule)
-	    EPStatement cepStatementOperationDuration = cepAdm.createEPL(""
+	    cepAdm.createEPL(""
 	    		+ " insert into HighLatency3SigmaRule"
 	    		+ " select collector.JsonDeserialize.traceIdToHex(span.traceIdHigh, span.traceIdLow) as traceId,"
 	    		+ " Long.toHexString(span.spanId) as spanId, serviceName, span.operationName as operationName,"
-	    		+ " span.startTime as startTime, span.duration as duration,"
-	    		+ " process.tags.firstOf(t => t.key = \"hostname\").getVStr() as hostname"
+	    		+ " span.startTime as startTime, span.duration as duration, p.hostname as hostname"
 	    		+ " from SpansWindow as s join ProcessesTable as p"
 	    		+ " where s.hashProcess = p.hashProcess and java.lang.Math.abs(span.duration - MeanDurationPerOperation[serviceName, span.operationName].meanDuration) > (3 * MeanDurationPerOperation[serviceName, span.operationName].stdDevDuration)");
-	    cepStatementOperationDuration.addListener(new CEPListenerAnomalies());
+	    
+	    EPStatement cepStatementHighLatencies = cepAdm.createEPL("select * from HighLatency3SigmaRule");
+	    cepStatementHighLatencies.addListener(new CEPListenerHighLatencies());
 	    
 	    //TAIL SAMPLING
 	    EPStatement cepStatementTailSampling = cepAdm.createEPL("select rstream * from SpansWindow as s where exists (select * from TracesToBeSampled where traceId = (collector.JsonDeserialize.traceIdToHex(s.span.traceIdHigh, s.span.traceIdLow)))");
@@ -126,17 +184,17 @@ public class EsperHandler {
 	    cepEvents.addListener(new CEPListener("Event: "));
 	    
 	    cepAdm.createEPL("insert into CommitEvent"
-	    		+ " select java.time.Instant.now().toEpochMilli() as timestamp, cast(event.get(\"commit\")?, string) as commit,"
-	    		+ " cast(event.get(\"commitMsg\")?, string) as commitMsg"
+	    		+ " select java.time.Instant.now().toEpochMilli() as timestamp, event('commit') as commit,"
+	    		+ " event('commitMsg') as commitMsg"
 	    		+ " from Event"
-	    		+ " where event.get(\"type\") = \"CommitEvent\""); 
+	    		+ " where event('type') = 'CommitEvent'"); 
 	    
 	    EPStatement cepSystemEvents = cepAdm.createEPL("select * from SystemEvent");
 	    cepSystemEvents.addListener(new CEPListener("SystemEvent: "));
 	    
 	    //METRICS listener
-	    EPStatement cepMetrics = cepAdm.createEPL("select * from Metric"); 
-	    cepMetrics.addListener(new CEPListener("Metric: "));
+//	    EPStatement cepMetrics = cepAdm.createEPL("select * from Metric"); 
+//	    cepMetrics.addListener(new CEPListener("Metric: "));
 	    
 	    Thread APIThread = new Thread(new Runnable() {
 			
