@@ -90,17 +90,17 @@ public class EsperHandler {
 	    		+ " from SpansWindow[select span.spanId, span.traceIdLow, span.traceIdHigh,* from span.references as r] s");
 	   
 	    cepAdm.createEPL("create table MeanDurationPerOperation (serviceName string primary key, operationName string primary key,"
-	    		+ " meanDuration double, m2 double, counter long, delta double)");
+	    		+ " meanDuration double, m2 double, counter long)");
 	    cepAdm.createEPL("on SpansWindow s"
 	    		+ " merge MeanDurationPerOperation m"
 	    		+ " where s.serviceName = m.serviceName and s.span.operationName = m.operationName"
 	    		+ " when matched"
-	    		+ " then update set counter = (counter + 1), delta = (span.duration - meanDuration) "
-	    		+ " then update set meanDuration = (meanDuration + (delta/counter))"
-	    		+ " then update set m2 = (m2 + (span.duration - meanDuration)*delta)"
+	    		+ " then update set counter = (initial.counter + 1), "
+	    		+ " meanDuration = (initial.meanDuration + ((span.duration - initial.meanDuration)/counter)),"
+	    		+ " m2 = (initial.m2 + (span.duration - meanDuration)*(span.duration - initial.meanDuration))"
 	    		+ " when not matched"
 	    		+ " then insert select s.serviceName as serviceName, s.span.operationName as operationName,"
-	    		+ " s.span.duration as meanDuration, (s.span.duration / 4) as m2, 1 as counter");
+	    		+ " s.span.duration as meanDuration, 0 as m2, 1 as counter");
 	    
 	    EPStatement tableDuration = cepAdm.createEPL("select serviceName, operationName, meanDuration, (m2/counter) as variance"
 	    		+ " from MeanDurationPerOperation"
@@ -177,9 +177,9 @@ public class EsperHandler {
 	    		+ " Long.toHexString(span.spanId) as spanId, serviceName, span.operationName as operationName,"
 	    		+ " span.startTime as startTime, span.duration as duration, p.hostname as hostname"
 	    		+ " from SpansWindow as s join ProcessesTable as p"
-	    		+ " where s.hashProcess = p.hashProcess and java.lang.Math.abs(span.duration - MeanDurationPerOperation[serviceName, span.operationName].meanDuration) >"
-	    		+ " (3 * (MeanDurationPerOperation[serviceName, span.operationName].m2 / MeanDurationPerOperation[serviceName, span.operationName].counter))");
-	    cepStatementHighLatencies1.addListener(new CEPListener("Here: "));
+	    		+ " where s.hashProcess = p.hashProcess and (span.duration - MeanDurationPerOperation[serviceName, span.operationName].meanDuration) >"
+	    		+ " 3 * java.lang.Math.sqrt((MeanDurationPerOperation[serviceName, span.operationName].m2) / (MeanDurationPerOperation[serviceName, span.operationName].counter))");
+	    cepStatementHighLatencies1.addListener(new CEPListener("Here3: "));
 	    
 	    EPStatement cepStatementHighLatencies = cepAdm.createEPL("select * from HighLatency3SigmaRule");
 	    cepStatementHighLatencies.addListener(new CEPListenerHighLatencies());
