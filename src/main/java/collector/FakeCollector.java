@@ -31,7 +31,7 @@ public class FakeCollector {
 		Thread webSocketThread = new Thread(ws);
     	webSocketThread.start();
     	
-    	Thread.sleep(10000);
+    	//Thread.sleep(10000);
 		
 		Gson gson = new Gson();
 

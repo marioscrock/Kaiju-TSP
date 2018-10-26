@@ -34,7 +34,7 @@ public class RecordCollector {
 		synchronized(numbRecords) {
 			if (numbRecords.get() > BUFFER_SIZE) {
 				
-				System.out.println("Saving " + filepath + " " + numbRecords.get() + "records");
+				//System.out.println("Saving " + filepath + " " + numbRecords.get() + "records");
 				numbRecords.set(0);
 				saveData(true);	
 				

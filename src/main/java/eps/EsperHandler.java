@@ -74,6 +74,11 @@ public class EsperHandler {
 	    		+ " select s as span, collector.JsonDeserialize.hashProcess(p) as hashProcess, p.serviceName as serviceName"
 	    		+ " from Batch[select process as p, * from spans as s]");
 	    
+	    EPStatement gaugeRequestsPerHostname = cepAdm.createEPL("select hostname, count(*)"
+	    		+ "from Batch[select process.tags.firstOf(t => t.key = 'hostname').getVStr() as hostname, * from spans as s where s.parentSpanId = 0]"
+	    		+ "group by hostname");
+	    gaugeRequestsPerHostname.addListener(new CEPListener("Gauge per hostname: "));
+	    
 	    //ERROR LOG reporter
 	    EPStatement cepStatementErrorLogs = cepAdm.createEPL("select Long.toHexString(spanId) as spanId, f.* from " +
 	    " Span[select spanId, * from logs][select * from fields as f where f.key=\"error\"]"); 
@@ -89,6 +94,7 @@ public class EsperHandler {
 	    		+ " s.r.spanId as spanIdFrom"
 	    		+ " from SpansWindow[select span.spanId, span.traceIdLow, span.traceIdHigh,* from span.references as r] s");
 	   
+	    //Welford's Online algorithm to compute running mean and variance
 	    cepAdm.createEPL("create table MeanDurationPerOperation (serviceName string primary key, operationName string primary key,"
 	    		+ " meanDuration double, m2 double, counter long)");
 	    cepAdm.createEPL("on SpansWindow s"
@@ -106,7 +112,16 @@ public class EsperHandler {
 	    		+ " from MeanDurationPerOperation"
 	    		+ " output snapshot every 5 seconds"
 	    		+ " order by meanDuration desc");
-	    tableDuration.addListener(new CEPListener("Top-k operation duration: "));
+	    //tableDuration.addListener(new CEPListener("Top-k operation duration: "));
+	    
+	    EPStatement perCustomerDuration = cepAdm.createEPL("select customerId, avg(duration) as meanDuration, stddev(duration) as stdDevDuration"
+	    		+ " from Span(parentSpanId = 0)"
+	    		+ " [select duration, l.getFields().firstOf(f => f.key ='customer_id').getVStr() as customerId" 
+	    		+ " from logs as l where l.fields.anyOf(f => f.key='customer_id')]"
+	    		+ " group by customerId"
+	    		+ " output snapshot every 5 seconds"
+	    		+ " order by meanDuration desc");
+	    //perCustomerDuration.addListener(new CEPListener("LatenciesCalcperCustomerId: "));
 	    
 	    //RESOURCE USAGE ATTRIBUTION
 	    EPStatement resourceUsageStatementCustomer = cepAdm.createEPL("select customerId,"
@@ -179,6 +194,7 @@ public class EsperHandler {
 	    		+ " from SpansWindow as s join ProcessesTable as p"
 	    		+ " where s.hashProcess = p.hashProcess and (span.duration - MeanDurationPerOperation[serviceName, span.operationName].meanDuration) >"
 	    		+ " 3 * java.lang.Math.sqrt((MeanDurationPerOperation[serviceName, span.operationName].m2) / (MeanDurationPerOperation[serviceName, span.operationName].counter))");
+	    
 	    cepStatementHighLatencies1.addListener(new CEPListener("Here3: "));
 	    
 	    EPStatement cepStatementHighLatencies = cepAdm.createEPL("select * from HighLatency3SigmaRule");
