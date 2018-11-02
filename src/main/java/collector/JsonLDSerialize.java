@@ -13,7 +13,13 @@ import thriftgen.SpanRefType;
 import thriftgen.Tag;
 import thriftgen.TagType;
 
-public class JsonDeserialize {
+/** 
+ * Class offering a static method to serialize a {@link thriftgen.Batch Batch} object 
+ * to a {@link org.json.simple.JSONObject JSONObject} expandable through the {@code tracing_ontology_context.json} file
+ * @author Mario
+ *
+ */
+public class JsonLDSerialize {
 	
 	public static final String PREFIX_LOG = "tr:log_";
 	public static final String PREFIX_PROCESS = "tr:process_";
@@ -21,6 +27,13 @@ public class JsonDeserialize {
 	public static final String PREFIX_TAG = "tr:tag_";
 	public static final String PREFIX_TRACE = "tr:trace_";
 	
+	/**
+	 * Static method to serialize a {@link thriftgen.Batch Batch} object 
+	 * to a {@link org.json.simple.JSONObject JSONObject} expandable through the {@code tracing_ontology_context.json} file
+	 * @param batch The batch to serialize
+	 * @return JSONObject representing the batch given as input
+	 * @throws Exception If errors while processing the batch
+	 */
 	@SuppressWarnings("unchecked")
 	public static JSONObject batchToJson(Batch batch) throws Exception {
 		
@@ -48,6 +61,13 @@ public class JsonDeserialize {
 		
 	}
 	
+	/**
+	 * Return a JSONObject representing a {@link thriftgen.Process Process} object
+	 * @param process The process to serialize
+	 * @param processId The {@code @id} assigned to the process
+	 * @param addTags {@code True} if process tags must be serialized
+	 * @return JSONObject representing the process given as input
+	 */
 	@SuppressWarnings("unchecked")
 	private static JSONObject processToJson(thriftgen.Process process, String processId, boolean addTags) {
 		
@@ -57,13 +77,11 @@ public class JsonDeserialize {
 		
 		if (addTags) {
 			
-			//Add Tags of the process to the json (create once for processes)
 			JSONArray jsonTags = tagsToJson(process.getTags());	
 			jsonProcess.put("hasProcessTag", jsonTags);
 			
 		} else {
 		
-			//We assume tags created once for process in batchToJson function
 			List<Tag> tags = process.getTags();
 			for(Tag tag : tags) {
 				
@@ -89,6 +107,11 @@ public class JsonDeserialize {
 
 	}
 	
+	/**
+	 * Return a {@link org.json.simple.JSONArray JSONArray} representing a list of {@link thriftgen.Tag Tag} objects
+	 * @param process The tags to serialize
+	 * @return JSONArray representing the tags given as input
+	 */
 	@SuppressWarnings("unchecked")
 	private static JSONArray tagsToJson(List<Tag> tags) {
 		
@@ -132,6 +155,12 @@ public class JsonDeserialize {
 		
 	}
 	
+	/**
+	 * Return a {@link org.json.simple.JSONArray JSONArray} representing a list of {@link thriftgen.Log Log} objects
+	 * @param logs The list of logs to serialize
+	 * @param prefixId The prefix related to the span for the {@code @id} assigned to logs
+	 * @return JSONArray representing the logs given as input
+	 */
 	@SuppressWarnings("unchecked")
 	private static JSONArray logsToJson(List<Log> logs, String prefixId) {
 		
@@ -155,7 +184,13 @@ public class JsonDeserialize {
 		return jsonLogs;
 
 	}
-
+	
+	/**
+	 * Return a {@link org.json.simple.JSONArray JSONArray} representing a list of {@link thriftgen.Span Span} objects
+	 * @param logs The list of spans to serialize
+	 * @param prefixId The {@code @id} assigned to the process related to the spans
+	 * @return JSONArray representing the spans given as input
+	 */
 	@SuppressWarnings("unchecked")
 	private static JSONArray spansToJson(List<Span> spans, String processId) {
 		
@@ -165,7 +200,7 @@ public class JsonDeserialize {
 			
 			JSONObject jsonSpan = new JSONObject();
 			
-			//ATTENTION: converting in HEX like DB
+			//ATTENTION: converting in HEX
 			String traceIdHex = traceIdToHex(span.getTraceIdHigh(), span.getTraceIdLow());
 			String spanIdHex = Long.toHexString(span.getSpanId());
 			String id = traceIdHex + spanIdHex;
@@ -222,13 +257,28 @@ public class JsonDeserialize {
 		
 	}
 	
+	/**
+	 * Convert {@link thriftgen.Span#traceIdHigh traceIdHigh} and {@link thriftgen.Span#traceIdLow traceIdLow}
+	 * to their HEX representation.
+	 * @param traceIdHigh
+	 * @param traceIdLow
+	 * @return String containing the HEX value 
+	 */
 	public static String traceIdToHex(Long traceIdHigh, Long traceIdLow) {
 		
-		return Long.toHexString(Long.valueOf((Long.toString(traceIdHigh) 
-				+ Long.toString(traceIdLow))).longValue());
+		if (traceIdHigh == 0)
+			return String.format("%x", traceIdLow);
+		else
+			return String.format("%x%016x", traceIdHigh, traceIdLow);
 		
 	}
 	
+	/**
+	 * Add to a JSONObject representing a {@link thriftgen.Span Span} a JSON representation of {@link thriftgen.SpanRef SpanRef} objects
+	 * @param span The span related to the references
+	 * @parma JSONObject JSONObject representing the span
+	 * @param refs The list of refs to serialize
+	 */
 	@SuppressWarnings("unchecked")
 	private static void refsToJson(Span span, JSONObject jsonSpan, List<SpanRef> refs) {
 		
@@ -246,7 +296,7 @@ public class JsonDeserialize {
 		
 		}
 		
-		//CHILDOF reference with Parent
+		//Add CHILDOF reference with Parent
 		if (span.getParentSpanId() != 0L) {
 			childOf.add(PREFIX_SPAN + traceIdToHex(span.getTraceIdHigh(), span.getTraceIdLow()) +
 					Long.toHexString(span.getParentSpanId()));
@@ -260,7 +310,7 @@ public class JsonDeserialize {
 	
 	}
 	
-	//Special char replace
+	//Special chars replace
 	private static String r(String string) {
 		
 		String rString = string;

@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.espertech.esper.client.EventBean;
 
-import collector.JsonDeserialize;
+import collector.JsonLDSerialize;
 import thriftgen.Log;
 import thriftgen.Span;
 import thriftgen.SpanRef;
@@ -19,7 +19,7 @@ public class EventToJsonConverter {
     	StringBuilder sb = new StringBuilder();
     	sb.append("{ ");
     	sb.append("\"traceID\" : ");
-    	sb.append("\"" + JsonDeserialize.traceIdToHex(s.getTraceIdHigh(), s.getTraceIdLow()) + "\", ");
+    	sb.append("\"" + JsonLDSerialize.traceIdToHex(s.getTraceIdHigh(), s.getTraceIdLow()) + "\", ");
     	sb.append("\"serviceName\" : ");
     	sb.append("\"" + e.get("serviceName") + "\", ");
     	sb.append("\"hashProcess\" : ");
@@ -37,7 +37,7 @@ public class EventToJsonConverter {
 	    	for(int i = 0; i < spanrefs.size(); i ++) {
 	    		sb.append(" { ");
 	    		sb.append("\"traceID\" : ");
-	    		sb.append(" \"" + JsonDeserialize.traceIdToHex(spanrefs.get(i).getTraceIdHigh(), spanrefs.get(i).getTraceIdLow()) + "\", ");
+	    		sb.append(" \"" + JsonLDSerialize.traceIdToHex(spanrefs.get(i).getTraceIdHigh(), spanrefs.get(i).getTraceIdLow()) + "\", ");
 	    		sb.append("\"spanID\" : ");
 	    		sb.append(" \"" + Long.toHexString(spanrefs.get(i).getSpanId()) + "\", ");
 	    		sb.append("\"refType\" : ");

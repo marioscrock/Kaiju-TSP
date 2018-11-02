@@ -18,11 +18,18 @@ import thriftgen.Batch;
 //import websocket.JsonTracesWS;
 import websocket.JsonTracesWS;
 
+/**
+ * Main class to launch a fake kaiju-collector instance. It emulates incoming batches 
+ * reading them from a JSON file.
+ * @author Mario
+ */
 public class FakeCollector {
 	
+	private final static String FILEPATH = "/dumpTraces.json";
 	private static int sentBatches = 0;
 	private static List<Batch> batches = new ArrayList<>();
 	private static CollectorHandler ch = new CollectorHandler();
+	
 
 	public static void main(String[] args) throws InterruptedException {
 		
@@ -31,21 +38,23 @@ public class FakeCollector {
 		Thread webSocketThread = new Thread(ws);
     	webSocketThread.start();
     	
-    	//Thread.sleep(10000);
-		
+		//Read batches from file
 		Gson gson = new Gson();
-
-		InputStream in = FakeCollector.class.getResourceAsStream("/dumpTraces.json");
+		InputStream in = FakeCollector.class.getResourceAsStream(FILEPATH);
 		Batch[] batchesArray = gson.fromJson(new BufferedReader(new InputStreamReader(in)), Batch[].class);
 		batches = Arrays.asList(batchesArray);
 		
+		//Schedule batches
 		final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 	    executorService.scheduleAtFixedRate(FakeCollector::sendBatch, 0, 500, TimeUnit.MILLISECONDS);
 	  
 		return;
 
 	}
-
+	
+	/**
+	 * Send a batch to the handler. Unit of work for the executor.
+	 */
 	private static void sendBatch() {
 	    
 		if (sentBatches < batches.size()) {

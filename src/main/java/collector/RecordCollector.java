@@ -7,15 +7,28 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Utils class to save records to files. Files are saved each time the buffer is full.
+ * Records are saved as {@code .csv} file, one record on each line with comma as separator char.
+ * @author Mario
+ */
 public class RecordCollector {
 	
+	private final static Logger log = LoggerFactory.getLogger(RecordCollector.class);
 	private final int BUFFER_SIZE;
 	
 	private Set<String[]> dataToWrite;
 	private String filepath;
 	private AtomicInteger numbRecords; 
 	
-	
+	/**
+	 * Constructor of a RecordCollector.
+	 * @param filepath The path to the file to save records
+	 * @param bufferSize The buffer size
+	 */
 	public RecordCollector (String filepath, int bufferSize) {	
 		dataToWrite = ConcurrentHashMap.newKeySet();
 		numbRecords = new AtomicInteger(0);
@@ -26,6 +39,10 @@ public class RecordCollector {
 		saveData(false);
 	}
 	
+	/**
+	 * Method to add a record to the buffer.
+	 * @param record Record to be added to the buffer
+	 */
 	public void addRecord(String[] record) {
 		dataToWrite.add(record);
 		numbRecords.getAndIncrement();
@@ -42,6 +59,11 @@ public class RecordCollector {
 		}
 	}
 	
+	/**
+	 * Public method to save data. It is public to be called even if the buffer
+	 * is not full.
+	 * @param append {@code True} if records in the buffer must be appended to other saved records
+	 */
 	public void saveData(boolean append) {
 		
         FileWriter pw;
@@ -70,7 +92,7 @@ public class RecordCollector {
 	        }
 	        
         } catch (IOException e) {
-			e.printStackTrace();
+			log.error("Error in saving records to file: " + e.getMessage());
 		}
             
     }
