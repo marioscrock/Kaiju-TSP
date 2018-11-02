@@ -45,5 +45,19 @@ public class KaijuAPI {
         http.get("/api/dependencies/:traceId", (request, response) -> KaijuAPIHandler.getDependenciesByTraceId(request, response));
 
     }
+    
+    public static void threadAPI() {
+    	
+    	Thread APIThread = new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				KaijuAPI.initAPI();	
+			}
+			
+		});
+	    
+	    APIThread.run();
+    }
 
 }
