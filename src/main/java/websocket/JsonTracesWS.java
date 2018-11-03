@@ -4,6 +4,8 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.github.jsonldjava.core.JsonLdOptions;
@@ -22,18 +24,32 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Class managing a web socket at url {@code :4567/streams/jsonTraces} outputting incoming data in JSON-LD format
+ * expandable through the {@code tracing_ontology_context.json} context. If {@link #isContextSet()} is {@code true} 
+ * the context is sent together with data, otherwise data are sent without the context. To set the context a valid 
+ * path for a JSON file containing the context should be provided through {@link #setContext(String)} before calling the 
+ * {@link #run()} method.
+ * @author Mario
+ *
+ */
 public class JsonTracesWS implements Runnable {
-
-    // this set is shared between sessions and threads, so it needs to be thread-safe (http://stackoverflow.com/a/2688817)
+	
+	private final static Logger log = LoggerFactory.getLogger(JsonTracesWS.class);
+	
+    // This set is shared between sessions and threads, so it needs to be thread-safe (http://stackoverflow.com/a/2688817)
     static Set<Session> clientSet;
     static AtomicBoolean queueOn; 
     static Thread pullingQueue;
-    static boolean context = false;
-    static String contextPath;
     
+    private static boolean context = false;
+    private static String contextPath;
     private static JSONObject jsonContext;
     private static BlockingQueue<JSONObject> queue;
-
+    
+    /**
+     * Runnable implementation initializing the web socket.
+     */
 	@Override
 	public void run() {
     	
@@ -50,7 +66,7 @@ public class JsonTracesWS implements Runnable {
 				InputStream in = getClass().getResourceAsStream(contextPath);
 				obj = parser.parse(new BufferedReader(new InputStreamReader(in)));
 	        } catch (IOException | ParseException e) {
-	            e.printStackTrace();
+	        	log.error("Error parsing context: " + e.getMessage());
 	        }
 			
 	    	JSONObject jsonObject = (JSONObject) obj;
@@ -63,6 +79,10 @@ public class JsonTracesWS implements Runnable {
         
 	}
     
+	/**
+	 * Static method to broadcast messages to connected clients.
+	 * @param message
+	 */
     public static void broadcastMessage(String message) {
         clientSet.stream().filter(Session::isOpen).forEach(session -> {
             try {
@@ -73,7 +93,10 @@ public class JsonTracesWS implements Runnable {
         });
     }
     
-    
+    /**
+     * Static method to send a JSON representation of {@code thriftgen.Batch} objects to connected clients.
+     * @param batch
+     */
     public static void sendBatch(JSONObject batch) {
     	
     	queue.add(batch);
@@ -108,8 +131,13 @@ public class JsonTracesWS implements Runnable {
     	
     }
     
+    /**
+     * Static method to pull the queue of {@link org.json.simple.JSONObject JSONObject}s to be sent.
+     * @throws JsonGenerationException
+     * @throws IOException
+     */
     @SuppressWarnings("unchecked")
-	public static void pullQueue() throws JsonGenerationException, IOException {
+	private static void pullQueue() throws JsonGenerationException, IOException {
     	
     	JSONObject batch = null;
 		try {
@@ -135,9 +163,23 @@ public class JsonTracesWS implements Runnable {
                  
     }
     
-	public static void setContext(boolean context, String contextPath) {
-		JsonTracesWS.context = context;
-		JsonTracesWS.contextPath = contextPath;
+    /**
+     * Static method to check if a context is set and is sent together with JSON data.
+     * @return {@code true} if a context is set and is sent together with JSON data. 
+     */
+    public static boolean isContextSet() {
+		return context;
+	}
+    
+    /**
+     * Static method to set a context to be sent together with JSON data.
+     * @param contextPath path of JSON file containing the context.
+     */
+	public static void setContext(String contextPath) {
+		if (contextPath != null) {
+			JsonTracesWS.context = true;
+			JsonTracesWS.contextPath = contextPath;
+		}
 	}
 
 }

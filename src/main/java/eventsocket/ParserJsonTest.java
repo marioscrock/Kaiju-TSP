@@ -1,5 +1,10 @@
 package eventsocket;
 
+/**
+ * Simple class to test {@link eventsocket.ParserJson}.
+ * @author Mario
+ *
+ */
 public class ParserJsonTest {
 	
 	public static void main(String[] args) throws InterruptedException {
@@ -67,19 +72,19 @@ public class ParserJsonTest {
 				"    ]\n" + 
 				"}";
 		
-		System.out.println(s1);
-		System.out.println(s2);
-		System.out.println(s3);
+//		System.out.println(s1);
+//		System.out.println(s2);
+//		System.out.println(s3);
 		
-//		Thread t1 = new Thread(new ParserJson(s1));
-//		Thread t2 = new Thread(new ParserJson(s2));
-//		Thread t3 = new Thread(new ParserJson(s3));
-//		t1.start();
-//		t2.start();
-//		t3.start();
-//		t1.join();
-//		t2.join();
-//		t3.join();
+		Thread t1 = new Thread(new ParserJson(s1));
+		Thread t2 = new Thread(new ParserJson(s2));
+		Thread t3 = new Thread(new ParserJson(s3));
+		t1.start();
+		t2.start();
+		t3.start();
+		t1.join();
+		t2.join();
+		t3.join();
 
 	}
 

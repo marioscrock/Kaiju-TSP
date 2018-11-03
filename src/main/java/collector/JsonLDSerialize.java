@@ -15,7 +15,7 @@ import thriftgen.TagType;
 
 /** 
  * Class offering a static method to serialize a {@link thriftgen.Batch Batch} object 
- * to a {@link org.json.simple.JSONObject JSONObject} expandable through the {@code tracing_ontology_context.json} file
+ * to a {@link org.json.simple.JSONObject JSONObject} expandable through the {@code tracing_ontology_context.json} context.
  * @author Mario
  *
  */

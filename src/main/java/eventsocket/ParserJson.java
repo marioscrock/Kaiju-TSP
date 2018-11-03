@@ -10,15 +10,26 @@ import com.google.gson.JsonParser;
 import java.lang.Exception;
 import eps.EsperHandler;
 
+/**
+ * Runnable class parsing {@link eventSocket.Metric Metric} and
+ * {@link eventSocket.Event Event} events from JSON format to Java objects.
+ */
 public class ParserJson implements Runnable {
 	
 	private final static Logger log = LoggerFactory.getLogger(ParserJson.class);
 	private String jsonToParse;
 	
+	/**
+	 * Constructor of the ParserJson class.
+	 * @param readLine The JSON {@code String} to be parsed.
+	 */
 	public ParserJson(String readLine) {
 		jsonToParse = readLine;
 	}
-
+	
+	/**
+	 * Runnable implementation parsing the JSON {@code String}.
+	 */
 	@Override
 	public void run() {
 		

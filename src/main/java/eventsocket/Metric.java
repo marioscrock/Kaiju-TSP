@@ -3,13 +3,19 @@ package eventsocket;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Class representing a metric following the InfluxDB specification.
+ * @see <a href="https://docs.influxdata.com/telegraf/v1.8/data_formats/output/json/>
+ * @author Mario
+ *
+ */
 public class Metric {
 	
-	public Map<String, String> fields = new HashMap<String, String>();
 	public String name;
-	
-	public Map<String, String> tags = new HashMap<String, String>();
+	public Map<String, String> fields = new HashMap<String, String>();
 	public Long timestamp;
+	public Map<String, String> tags = new HashMap<String, String>();
+	
 	
 	public Map<String, String> getFields() {
 		return fields;
