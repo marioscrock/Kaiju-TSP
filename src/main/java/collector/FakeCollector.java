@@ -26,17 +26,22 @@ import websocket.JsonTracesWS;
 public class FakeCollector {
 	
 	private final static String FILEPATH = "/dumpTraces.json";
-	private static int sentBatches = 0;
-	private static List<Batch> batches = new ArrayList<>();
-	private static CollectorHandler ch = new CollectorHandler();
+	private static int sentBatches;
+	private static List<Batch> batches;
+	private static CollectorHandler ch;
 	
 
 	public static void main(String[] args) throws InterruptedException {
+		
+		sentBatches = 0;
+		batches = new ArrayList<>();
 		
 		//Open WebSocket
 		JsonTracesWS ws = new JsonTracesWS();
 		Thread webSocketThread = new Thread(ws);
     	webSocketThread.start();
+    	
+    	 ch = new CollectorHandler();
     	
 		//Read batches from file
 		Gson gson = new Gson();

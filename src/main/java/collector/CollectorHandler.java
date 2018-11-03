@@ -15,7 +15,6 @@ import com.uber.tchannel.messages.ThriftResponse;
 
 import eps.EsperHandler;
 import thriftgen.Batch;
-import thriftgen.BatchSubmitResponse;
 import thriftgen.Collector;
 import websocket.JsonTracesWS;
 
@@ -29,7 +28,7 @@ import websocket.JsonTracesWS;
  * @author Mario
  *
  */
-public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatches_args, Collector.submitBatches_result> implements Collector.Iface{
+public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatches_args, Collector.submitBatches_result> {
 	
 	private final static Logger log = LoggerFactory.getLogger(CollectorHandler.class);
 	
@@ -53,10 +52,8 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	 * Implements the thrift-defined interface {@link thriftgen.Collector Collector}.
 	 * Forwards batches to Esper engine and to the web socket if {@link #isWebSocket()} is {@code true}.
 	 * @param batches	List of batches to submit
-	 * @return null
 	 */
-	@Override
-	public List<BatchSubmitResponse> submitBatches(List<Batch> batches) throws TException {
+	public void submitBatches(List<Batch> batches) throws TException {
 		
 		for(Batch batch : batches) {
 			
@@ -84,8 +81,6 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 //			BatchSerialize.serialize(batch, numbBatches);
 					
 		}
-			
-		return null;
 		
 	}
 	
