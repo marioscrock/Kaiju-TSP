@@ -38,9 +38,9 @@ public class JsonTracesWS implements Runnable {
 	private final static Logger log = LoggerFactory.getLogger(JsonTracesWS.class);
 	
     // This set is shared between sessions and threads, so it needs to be thread-safe (http://stackoverflow.com/a/2688817)
-    static Set<Session> clientSet;
-    static AtomicBoolean queueOn; 
-    static Thread pullingQueue;
+    protected static Set<Session> clientSet;
+    protected static AtomicBoolean queueOn; 
+    protected static Thread pullingQueue;
     
     private static boolean context = false;
     private static String contextPath;
@@ -79,20 +79,6 @@ public class JsonTracesWS implements Runnable {
         
 	}
     
-	/**
-	 * Static method to broadcast messages to connected clients.
-	 * @param message
-	 */
-    public static void broadcastMessage(String message) {
-        clientSet.stream().filter(Session::isOpen).forEach(session -> {
-            try {
-                session.getRemote().sendString(message);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-    }
-    
     /**
      * Static method to send a JSON representation of {@code thriftgen.Batch} objects to connected clients.
      * @param batch
@@ -107,8 +93,6 @@ public class JsonTracesWS implements Runnable {
         		
         		@Override
         		public void run() {
-        			System.out.println("RUNNING");
-        			
         			while (queueOn.get()) {
         				try {
 							JsonTracesWS.pullQueue();
@@ -116,8 +100,6 @@ public class JsonTracesWS implements Runnable {
 							e.printStackTrace();
 						}
         			}
-        			
-        			System.out.println("STOPPING");
         			return;
         		}
         	
@@ -129,6 +111,20 @@ public class JsonTracesWS implements Runnable {
     
     	queueOn.set(clientSet.size() > 0);
     	
+    }
+    
+    /**
+	 * Static method to broadcast messages to connected clients.
+	 * @param message
+	 */
+    protected static void broadcastMessage(String message) {
+        clientSet.stream().filter(Session::isOpen).forEach(session -> {
+            try {
+                session.getRemote().sendString(message);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
     
     /**
@@ -164,7 +160,7 @@ public class JsonTracesWS implements Runnable {
     }
     
     /**
-     * Static method to check if a context is set and is sent together with JSON data.
+     * Static method to check if a context is set and it is sent together with JSON data.
      * @return {@code true} if a context is set and is sent together with JSON data. 
      */
     public static boolean isContextSet() {

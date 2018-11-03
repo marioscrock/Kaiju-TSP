@@ -10,8 +10,8 @@ import eps.listener.CEPTailSamplingListener;
 public class EsperStatements {
 	
 	/**
-	 * Define Anomaly events.
-	 * @param cepAdm
+	 * Define anomalies events.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
 	 */
 	public static void defineAnomalyEvents(EPAdministrator cepAdm) {
 		cepAdm.createEPL("create schema Anomaly()");
@@ -19,12 +19,21 @@ public class EsperStatements {
 	    cepAdm.createEPL("create schema HighLatency3SigmaRule(serviceName string, operationName string,"
 	    		+ " spanId string, duration long, startTime long, hostname string) inherits TraceAnomaly");	
 	}
-
+	
+	/**
+	 * Define system events.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 */
 	public static void defineSystemEvents(EPAdministrator cepAdm) {
 		cepAdm.createEPL("create schema SystemEvent(timestamp long)");
 	    cepAdm.createEPL("create schema CommitEvent(commit string, commitMsg string) inherits SystemEvent");	
 	}
-
+	
+	/**
+	 * Define a named window storing traceId of incoming spans {@code (traceIdHex string)}.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param retentionTime Sliding time of the window.
+	 */
 	public static void defineTracesWindow(EPAdministrator cepAdm, String retentionTime) {
 		cepAdm.createEPL("create window TracesWindow#unique(traceIdHex)#time(" + retentionTime + ") (traceIdHex string)");
 	    cepAdm.createEPL("insert into TracesWindow(traceIdHex)"
@@ -32,6 +41,10 @@ public class EsperStatements {
 	    		+ " from Span");		
 	}
 
+	/**
+	 * Define a table storing processes of incoming batches {@code (hashProcess int primary key, process thriftgen.Process, hostname string)}.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 */
 	public static void defineProcessesTable(EPAdministrator cepAdm) {
 		cepAdm.createEPL("create table ProcessesTable (hashProcess int primary key, process thriftgen.Process, hostname string)");
 	    cepAdm.createEPL("on Batch b merge ProcessesTable p"
@@ -39,7 +52,12 @@ public class EsperStatements {
 	    		+ " when not matched then insert select collector.JsonLDSerialize.hashProcess(process) as hashProcess, process,"
 	    		+ " process.tags.firstOf(t => t.key = 'hostname').getVStr() as hostname");	
 	}
-
+	
+	/**
+	 * Define a named window storing incoming spans and the related process {@code (span thriftgen.Span, hashProcess int, serviceName string)}.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param retentionTime Sliding time of the window.
+	 */
 	public static void defineSpansWindow(EPAdministrator cepAdm, String retentionTime) {
 		cepAdm.createEPL("create window SpansWindow#time(" + retentionTime + ") as (span thriftgen.Span, hashProcess int, serviceName string)");
 		cepAdm.createEPL("insert into SpansWindow"
@@ -48,6 +66,11 @@ public class EsperStatements {
 		
 	}
 	
+	/**
+	 * Define a named window storing dependencies of incoming spans {@code (traceIdHexFrom string, spanIdFrom long, traceIdHexTo string, spanIdTo long)}
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param retentionTime Sliding time of the window.
+	 */
 	public static void defineDependenciesWindow(EPAdministrator cepAdm, String retentionTime) {
 		cepAdm.createEPL("create window DependenciesWindow#time(" + retentionTime + ") (traceIdHexFrom string,"
 	    		+ " spanIdFrom long, traceIdHexTo string, spanIdTo long)");
@@ -59,6 +82,11 @@ public class EsperStatements {
 	    		+ " from SpansWindow[select span.spanId, span.traceIdLow, span.traceIdHigh,* from span.references as r] s");	
 	}
 	
+	/**
+	 * Define a table storing the mean duration and Welford's Online algorithm coefficients per each operation 
+	 * {@code (serviceName string primary key, operationName string primary key, meanDuration double, m2 double, counter long)}
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 */
 	public static void defineMeanDurationPerOperationTable(EPAdministrator cepAdm) {
 		
 		cepAdm.createEPL("create table MeanDurationPerOperation (serviceName string primary key, operationName string primary key,"
@@ -76,6 +104,13 @@ public class EsperStatements {
 	    
 	}
 	
+	/**
+	 * Define a table storing the mean duration and Welford's Online algorithm coefficients per each operation 
+	 * {@code (serviceName string primary key, operationName string primary key, meanDuration double, m2 double, counter long)}.
+	 * It resets the counter of each row when the value exceeds {@code resetValueInt}.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param resetValueInt The maximum value for the counter. If higher, reset the counter.
+	 */
 	public static void defineMeanDurationPerOperationTableResetCounter(EPAdministrator cepAdm, String resetValueInt) {
 	    
 		cepAdm.createEPL("create table MeanDurationPerOperation (serviceName string primary key, operationName string primary key,"
@@ -97,6 +132,12 @@ public class EsperStatements {
 
 	}
 	
+	/**
+	 * Define a named window storing traceIds of traces to be saved {@code (traceId string)} and all the rules 
+	 * to populate the window.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param retentionTime Sliding time of the window.
+	 */
 	public static void defineTracesToBeSampledWindow(EPAdministrator cepAdm, String retentionTime) {
 		cepAdm.createEPL("create window TracesToBeSampledWindow#unique(traceId)#time(" + retentionTime + ") (traceId string)");
 	    cepAdm.createEPL("on TraceAnomaly a"
@@ -105,7 +146,12 @@ public class EsperStatements {
 	    		+ " when not matched"
 	    		+ " then insert into TracesToBeSampledWindow select a.traceId as traceId");
 	}
-
+	
+	/**
+	 * Register a {@link eps.listener.CEPListener CEPListener} reporting the number of requests
+	 * grouped by hostname.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 */
 	public static void gaugeRequestsPerHostname(EPAdministrator cepAdm) {
 		EPStatement gaugeRequestsPerHostname = cepAdm.createEPL("select hostname, count(*)"
 	    		+ "from Batch[select process.tags.firstOf(t => t.key = 'hostname').getVStr() as hostname, * from spans as s where s.parentSpanId = 0]"
@@ -114,15 +160,21 @@ public class EsperStatements {
 	}
 	
 	/**
-	 * Reports all (spanId, fields) for each log with "error" as key
-	 * @param cepAdm
+	 * Register a {@link eps.listener.CEPListener CEPListener} reporting all {@code (spanId, fields)} for each log with "error" as key.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
 	 */
 	public static void errorLogs(EPAdministrator cepAdm) {
 		EPStatement errorLogs = cepAdm.createEPL("select Long.toHexString(spanId) as spanId, f.* from " +
 			    " Span[select spanId, * from logs][select * from fields as f where f.key=\"error\"]"); 
 		errorLogs.addListener(new CEPListener("Error: "));
 	}
-
+	
+	/**
+	 * Register a {@link eps.listener.CEPListener CEPListener} reporting the top-{@code K} operation
+	 * given their mean duration.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param K
+	 */
 	public static void topKOperationDuration(EPAdministrator cepAdm, String K) {
 		EPStatement tableDuration = cepAdm.createEPL("select serviceName, operationName, meanDuration, (m2/counter) as variance, counter"
 	    		+ " from MeanDurationPerOperation"
@@ -132,7 +184,12 @@ public class EsperStatements {
 	    tableDuration.addListener(new CEPListener("Top-" + K + " operation duration: "));
 		
 	}
-
+	
+	/**
+	 * Register a {@link eps.listener.CEPListener CEPListener} reporting the average duration of requests grouped by
+	 * customer.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 */
 	public static void perCustomerDuration(EPAdministrator cepAdm) {
 		 EPStatement perCustomerDuration = cepAdm.createEPL("select customerId, avg(duration) as meanDuration, stddev(duration) as stdDevDuration"
 		    		+ " from Span(parentSpanId = 0)"
@@ -144,6 +201,12 @@ public class EsperStatements {
 		perCustomerDuration.addListener(new CEPListener("LatenciesCalcPerCustomerId: "));
 	}
 	
+	/**
+	 * Register a {@link eps.listener.CEPListener CEPListener} reporting time CPU RouteCalc grouped by CustomerId 
+	 * (Contained Events syntax).
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param retentionTime Sliding time of the window.
+	 */
 	public static void resourceUsageCustomerCE(EPAdministrator cepAdm, String retentionTime) {
 		EPStatement resourceUsageCustomerCE = cepAdm.createEPL("select customerId,"
 	    		+ " sum(time) as timeCPURouteCalcperCustomerId"
@@ -160,7 +223,13 @@ public class EsperStatements {
 	    		+ " output last every 10 seconds");//+ " output every " + retentionTime + "");
 		resourceUsageCustomerCE.addListener(new CEPListener("TimeCPURouteCalcperCustomerId: "));	
 	}
-
+	
+	/**
+	 * Register a {@link eps.listener.CEPListener CEPListener} reporting time CPU RouteCalc grouped by CustomerId 
+	 * (Collections syntax).
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param retentionTime Sliding time of the window.
+	 */
 	public static void resourceUsageCustomer(EPAdministrator cepAdm, String retentionTime) {
 		 EPStatement resourceUsageCustomer = cepAdm.createEPL("select "
 		    		+ " s1.logs.firstOf(l => l.fields.anyOf(f => f.key ='customer_id')).getFields().firstOf(f => f.key ='customer_id').getVStr() as customerId,"
@@ -174,7 +243,13 @@ public class EsperStatements {
 		    		+ " output last every 10 seconds");
 		 resourceUsageCustomer.addListener(new CEPListener("TimeCPURouteCalcperCustomerId: "));	
 	}
-
+	
+	/**
+	 * Register a {@link eps.listener.CEPListener CEPListener} reporting time CPU RouteCalc grouped by SessionId 
+	 * (Contained Events syntax).
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param retentionTime Sliding time of the window.
+	 */
 	public static void resourceUsageSessionCE(EPAdministrator cepAdm, String retentionTime) {
 		EPStatement resourceUsageSessionCE = cepAdm.createEPL("select sessionId,"
 	    		+ " sum(time) as timeCPURouteCalcperSessionId"
@@ -191,7 +266,13 @@ public class EsperStatements {
 	    		+ " output last every 10 seconds");//+ " output every " + retentionTime + "");
 		resourceUsageSessionCE.addListener(new CEPListener("TimeCPURouteCalcperSessionId: "));	
 	}
-
+	
+	/**
+	 * Register a {@link eps.listener.CEPListener CEPListener} reporting time CPU RouteCalc grouped by SessionId 
+	 * (Collections syntax).
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param retentionTime Sliding time of the window.
+	 */
 	public static void resourceUsageSession(EPAdministrator cepAdm, String retentionTime) {
 		EPStatement resourceUsageSession = cepAdm.createEPL("select "
 	    		+ " s1.logs.firstOf(l => l.fields.anyOf(f => f.getVStr() ='session')).getFields().firstOf(f => f.key ='value').getVStr() as sessionId,"
@@ -205,7 +286,12 @@ public class EsperStatements {
 	    		+ " output last every 10 seconds");//+ " output every " + retentionTime + "");
 		resourceUsageSession.addListener(new CEPListener("TimeCPURouteCalcperSessionId: "));
 	}
-
+	
+	/**
+	 * Register a {@link eps.listener.CEPListener CEPListener} and generate a {@code HighLatency3SigmaRule} event
+	 * reporting spans such that operation (duration - meanDuration) > 3*stdDev.  
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 */
 	public static void highLatencies(EPAdministrator cepAdm) {
 		 EPStatement highLatencies =cepAdm.createEPL(""
 		    		+ " insert into HighLatency3SigmaRule"
@@ -217,19 +303,35 @@ public class EsperStatements {
 		    		+ " 3 * java.lang.Math.sqrt((MeanDurationPerOperation[serviceName, span.operationName].m2) / (MeanDurationPerOperation[serviceName, span.operationName].counter))");
 		 highLatencies.addListener(new CEPListener("(duration - meanDuration) > 3*stdDev: "));		
 	}
-
+	
+	/**
+	 * Register a {@link eps.listener.CEPListenerHighLatencies CEPListenerHighLatencies} saving 
+	 * {@code HighLatency3SigmaRule} events to file.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param filepath Filepath of the file to save events.
+	 */
 	public static void reportHighLatencies(EPAdministrator cepAdm, String filepath) {
 		EPStatement reportHighLatencies = cepAdm.createEPL("select * from HighLatency3SigmaRule");
 	    reportHighLatencies.addListener(new CEPListenerHighLatencies(filepath));	
 	}
-
+	
+	/**
+	 * Register a {@link eps.listener.CEPTailSamplingListener CEPTailSamplingListener} saving
+	 * spans exiting from {@code SpansWindow} to file.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param filepath Filepath of the file to save spans.
+	 */
 	public static void tailSampling(EPAdministrator cepAdm, String filepath) {
 	    EPStatement tailSampling = cepAdm.createEPL("select rstream * from SpansWindow as s"
 	    		+ " where exists (select * from TracesToBeSampledWindow "
 	    		+ "where traceId = (collector.JsonLDSerialize.traceIdToHex(s.span.traceIdHigh, s.span.traceIdLow)))");
 	    tailSampling.addListener(new CEPTailSamplingListener(filepath)); 		
 	}
-
+	
+	/**
+	 * Generate detected {@code CommitEvent} from Event stream.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 */
 	public static void insertCommitEvents(EPAdministrator cepAdm) {
 		  cepAdm.createEPL("insert into CommitEvent"
 		    		+ " select java.time.Instant.now().toEpochMilli() as timestamp, event('commit') as commit,"
@@ -237,12 +339,20 @@ public class EsperStatements {
 		    		+ " from Event"
 		    		+ " where event('type') = 'CommitEvent'"); 		
 	}
-
+	
+	/**
+	 * Register a {@link eps.listener.CEPListener CEPListener} reporting all {@code SystemEvent}.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 */
 	public static void systemEvents(EPAdministrator cepAdm) {
 	    EPStatement cepSystemEvents = cepAdm.createEPL("select * from SystemEvent");
 	    cepSystemEvents.addListener(new CEPListener("SystemEvent: "));	
 	}
-
+	
+	/**
+	 * Register a {@link eps.listener.CEPListener CEPListener} reporting all {@code Metric} event and {@code Event} event.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 */
 	public static void debugStatements(EPAdministrator cepAdm) {
 		//METRICS listener
 	    EPStatement cepMetrics = cepAdm.createEPL("select * from Metric"); 
