@@ -218,16 +218,16 @@ public class EsperStatements {
 		 highLatencies.addListener(new CEPListener("(duration - meanDuration) > 3*stdDev: "));		
 	}
 
-	public static void reportHighLatencies(EPAdministrator cepAdm) {
+	public static void reportHighLatencies(EPAdministrator cepAdm, String filepath) {
 		EPStatement reportHighLatencies = cepAdm.createEPL("select * from HighLatency3SigmaRule");
-	    reportHighLatencies.addListener(new CEPListenerHighLatencies());	
+	    reportHighLatencies.addListener(new CEPListenerHighLatencies(filepath));	
 	}
 
-	public static void tailSampling(EPAdministrator cepAdm) {
+	public static void tailSampling(EPAdministrator cepAdm, String filepath) {
 	    EPStatement tailSampling = cepAdm.createEPL("select rstream * from SpansWindow as s"
 	    		+ " where exists (select * from TracesToBeSampledWindow "
 	    		+ "where traceId = (collector.JsonLDSerialize.traceIdToHex(s.span.traceIdHigh, s.span.traceIdLow)))");
-	    tailSampling.addListener(new CEPTailSamplingListener()); 		
+	    tailSampling.addListener(new CEPTailSamplingListener(filepath)); 		
 	}
 
 	public static void insertCommitEvents(EPAdministrator cepAdm) {

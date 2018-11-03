@@ -9,11 +9,33 @@ import com.espertech.esper.client.UpdateListener;
 import collector.RecordCollector;
 import eps.EventToJsonConverter;
 
+/**
+ * UpdateListener implementation saving incoming {@link thriftgen.Span Span} events to a given filepath.
+ * @author Mario
+ *
+ */
 public class CEPTailSamplingListener implements UpdateListener {
 	
 	private final static Logger log = LoggerFactory.getLogger(CEPTailSamplingListener.class);
-	private RecordCollector sampledCollector = new RecordCollector("./sampled.txt", 0);
+	private RecordCollector sampledCollector;
 	
+	/**
+	 * Constructor of the class CEPTailSamplingListener.
+	 * @param filepath Filepath where events are saved (default value is {@code "./sampled.txt"})
+	 */
+	public CEPTailSamplingListener(String filepath) {
+		if (filepath != null)
+			sampledCollector = new RecordCollector(filepath, 0);
+		else
+			sampledCollector = new RecordCollector("./sampled.txt", 0);
+	}
+	
+	/**
+	 * Update method saving incoming {@link thriftgen.Span Span} events as records to the filepath
+	 * associated to the {@link CEPTailSamplingListener CEPTailSamplingListener} instance.
+	 * Structure of the records is a {@code .txt} file where each row is a JSON representation
+	 * of a span.
+	 */
 	@Override
 	public void update(EventBean[] newData, EventBean[] oldData) {
 		

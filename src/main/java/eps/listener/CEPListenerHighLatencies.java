@@ -7,14 +7,31 @@ import com.espertech.esper.client.UpdateListener;
 
 import collector.RecordCollector;
 
+/**
+ * UpdateListener implementation saving incoming HighLatency3SigmaRule events as records to a given filepath.
+ * @author Mario
+ */
 public class CEPListenerHighLatencies implements UpdateListener {
 	
 	private RecordCollector anomaliesCollector;
 	
-	public CEPListenerHighLatencies() {
-		anomaliesCollector = new RecordCollector("./anomalies.csv", 0);
+	/**
+	 * Constructor of the class CEPListenerHighLatencies.
+	 * @param filepath Filepath where records are saved (default value is {@code "./anomalies.csv"})
+	 */
+	public CEPListenerHighLatencies(String filepath) {
+		if (filepath != null)
+			anomaliesCollector = new RecordCollector(filepath, 0);
+		else
+			anomaliesCollector = new RecordCollector("./anomalies.csv", 0);
 	}
 	
+	/**
+	 * Update method saving incoming HighLatency3SigmaRule events as records to the filepath
+	 * associated to the {@link CEPListenerHighLatencies CEPListenerHighLatencies} instance.
+	 * Structure of the records is a {@code .csv} file comma-separated with columns 
+	 * {@code traceId, spanId, operationName, serviceName, startTime, duration, hostname, recordTime}
+	 */
 	@Override
 	public void update(EventBean[] newData, EventBean[] oldData) {
 		

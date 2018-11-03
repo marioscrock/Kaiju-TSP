@@ -10,8 +10,19 @@ import thriftgen.Span;
 import thriftgen.SpanRef;
 import thriftgen.Tag;
 
+/**
+ * Class to convert {@link com.espertech.esper.client.EventBean EventBean} objects to a specific JSON representation.
+ * @author Mario
+ *
+ */
 public class EventToJsonConverter {
 	
+	/**
+	 * Static method to convert an {@link com.espertech.esper.client.EventBean EventBean} objects containing a
+	 * {@link thriftgen.Span Span} event to its JSON representation. 
+	 * @param e The {@link com.espertech.esper.client.EventBean EventBean} to convert
+	 * @return The JSON {@code String} representing the input
+	 */
 	public static String spanFromEB(EventBean e) {
     	
     	Span s = (Span) e.get("span");

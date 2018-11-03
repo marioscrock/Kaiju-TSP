@@ -12,6 +12,10 @@ public class KaijuAPIQueries {
 	protected static EPOnDemandPreparedQueryParameterized preparedLogs;
 	protected static EPOnDemandPreparedQueryParameterized preparedDependencies;
 	
+	/**
+	 * Static method to initialize a set of parametric fire-and-forget queries
+	 * to optimize queries made by KaijuAPI.
+	 */
 	public static void initPreparedQueries() {
 		
 		String queryTraces = "select * from TracesWindow"; 
@@ -25,7 +29,7 @@ public class KaijuAPIQueries {
 				+ "where collector.JsonDeserialize.traceIdToHex(span.traceIdHigh, span.traceIdLow) = ?"; 
         preparedSpansTraceId = EsperHandler.cepRT.prepareQueryWithParameters(querySpansTraceId);
         
-        String queryLogs = "select distinct span.operationName from " +
+        String queryLogs = "select span.spanId as spanId, span.operationName as operationName, span.getLogs() as logs from " +
         	    " SpansWindow where span.getLogs().anyOf(l => l.getFields().anyOf(f => f.key = ?))"; 
         preparedLogs = EsperHandler.cepRT.prepareQueryWithParameters(queryLogs);
         

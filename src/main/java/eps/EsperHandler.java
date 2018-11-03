@@ -12,6 +12,10 @@ import com.espertech.esper.client.EPServiceProviderManager;
 import eventsocket.Event;
 import eventsocket.Metric;
 
+/**
+ * Class to manage the Esper Engine.
+ * @author Mario
+ */
 public class EsperHandler {
 	
 	protected static EPRuntime cepRT;
@@ -19,12 +23,17 @@ public class EsperHandler {
 
 	public static String retentionTime = "2min";
 	
+	/**
+	 * Static method to initialize the Esper Engine and the selected statements, the Kaiju API.
+	 */
 	public static void initializeHandler() {
 		
 		//The Configuration is meant only as an initialization-time object.
 	    Configuration cepConfig = new Configuration();
 	    
-	    //Basic EVENTS
+	    /*
+	     * Basic EVENTS
+	     */
 	    addEventTypes(cepConfig);
 	 
 	    // We setup the engine
@@ -33,57 +42,70 @@ public class EsperHandler {
 	    cepRT = cep.getEPRuntime();
 	    cepAdm = cep.getEPAdministrator();
 	    
-	    //Additional EVENTS
+	    /*
+	     * Additional EVENTS
+	     */
 	    EsperStatements.defineAnomalyEvents(cepAdm);
 	    EsperStatements.defineSystemEvents(cepAdm);
 	    
-	    //TABLES and NAMED WINDOWS
-	    //TRACES WINDOW (traceId PK)
+	    /*
+	     * TABLES and NAMED WINDOWS
+	     */
+	    // TRACES WINDOW (traceId PK)
 	    EsperStatements.defineTracesWindow(cepAdm, retentionTime);
-	    //PROCESSES TABLE (hashProcess PK, process)
+	    // PROCESSES TABLE (hashProcess PK, process)
 	    EsperStatements.defineProcessesTable(cepAdm);
-	    //SPANS WINDOW (span, hashProcess, serviceName)
+	    // SPANS WINDOW (span, hashProcess, serviceName)
 	    EsperStatements.defineSpansWindow(cepAdm, retentionTime);
-	    //DEPENDENCIES WINDOW (traceIdHexFrom, spanIdFrom, traceIdHexTo, spanIdTo)
+	    // DEPENDENCIES WINDOW (traceIdHexFrom, spanIdFrom, traceIdHexTo, spanIdTo)
 	    EsperStatements.defineDependenciesWindow(cepAdm, retentionTime);
 	    
-	    //MEAN DURATION PER OPERATION TABLE
+	    // MEAN DURATION PER OPERATION TABLE (serviceName PK, operationName PK, meanDuration, m2, counter)
 	    //Welford's Online algorithm to compute running mean and variance
 	    EsperStatements.defineMeanDurationPerOperationTable(cepAdm);
+//	    EsperStatements.defineMeanDurationPerOperationTableResetCounter(cepAdm, 1000);
 	    
-	    //TRACES TO BE SAMPLED
+	    //TRACES TO BE SAMPLED WINDOW (traceId)
 	    EsperStatements.defineTracesToBeSampledWindow(cepAdm, retentionTime);
 	    
-	    //STATEMENTS
+	    /*
+	     * STATEMENTS
+	     */
 //	    EsperStatements.gaugeRequestsPerHostname(cepAdm);
 //	    EsperStatements.errorLogs(cepAdm);
 	    
 //	    EsperStatements.topKOperationDuration(cepAdm, "10");
 //	    EsperStatements.perCustomerDuration(cepAdm);
 	    
-	    //RESOURCE USAGE ATTRIBUTION
-	    //CE -> Contained Event Selection
+	    // RESOURCE USAGE ATTRIBUTION
+	    // CE -> Contained Event Selection
 //	    EsperStatements.resourceUsageCustomerCE(cepAdm, retentionTime);
 //	    EsperStatements.resourceUsageCustomer(cepAdm, retentionTime);
 //	    EsperStatements.resourceUsageSessionCE(cepAdm, retentionTime);
 //	    EsperStatements.resourceUsageSession(cepAdm, retentionTime);
 	    
-	    //ANOMALIES DETECTION
-	    //Three-sigma rule to detech anomalies (info https://en.wikipedia.org/wiki/68–95–99.7_rule)
-//	    EsperStatements.highLatencies(cepAdm);
-//	    EsperStatements.reportHighLatencies(cepAdm);
+	    // ANOMALIES DETECTION
+	    // Three-sigma rule to detect anomalies (info https://en.wikipedia.org/wiki/68–95–99.7_rule)
+	    EsperStatements.highLatencies(cepAdm);
+	    EsperStatements.reportHighLatencies(cepAdm, "./anomalies.csv");
 	    
-	    //TAIL SAMPLING
-//	    EsperStatements.tailSampling(cepAdm);   
+	    // TAIL SAMPLING
+	    EsperStatements.tailSampling(cepAdm, "./sampled.txt");   
 	    
-	    //EVENTS
+	    /*
+	     * EVENTS
+	     */
 //	    EsperStatements.insertCommitEvents(cepAdm);   
 //	    EsperStatements.systemEvents(cepAdm);
 	    
-	    //DEBUG socket
+	    /*
+	     * DEBUG socket
+	     */
 //	    EsperStatements.debugStatements(cepAdm);
 	    
-	    //START API
+	    /*
+	     * START API
+	     */
 	    KaijuAPI.threadAPI();
 	    
 	}
@@ -91,19 +113,28 @@ public class EsperHandler {
 	private static void addEventTypes(Configuration cepConfig) {
 		
 	    // We register thriftgen classes as objects the engine will have to handle
+		// JAEGER model
 	    cepConfig.addEventType("Batch", Batch.class.getName());
 	    cepConfig.addEventType("Span", Span.class.getName());
 	    cepConfig.addEventType("Process", Process.class.getName());
 	    cepConfig.addEventType("Log", Log.class.getName());
 	    cepConfig.addEventType("Tag", Tag.class.getName());
 	    cepConfig.addEventType("SpanRef", SpanRef.class.getName());
-	    
+	   
+	    // SOCKET events
+	    // Metrics -> JSON influxDB
+	    // Events -> Custom definition
 	    // We register metrics and events as objects the engine will have to handle
 	    cepConfig.addEventType("Metric", Metric.class.getName());
 	    cepConfig.addEventType("Event", Event.class.getName());
 		
 	}
 
+	/**
+	 * Static method to send a {@link thriftgen.Batch Batch} event, and a {@link thriftgen.Span Span} for each span 
+	 * in the batch to the Esper engine.
+	 * @param batch The {@link thriftgen.Batch Batch} to be sent to the Esper engine.
+	 */
 	public static void sendBatch(Batch batch) {
 		
 		cepRT.sendEvent(batch);
@@ -116,12 +147,20 @@ public class EsperHandler {
 		}
 	}
 	
+	/**
+	 * Static method to send a {@link eventSocket.Metric Metric} event to the Esper engine.
+	 * @param metric The {@link eventSocket.Metric Metric} to be sent to the Esper engine.
+	 */
 	public static void sendMetric(Metric metric) {
 		
 		cepRT.sendEvent(metric);
 		
 	}
 	
+	/**
+	 * Static method to send a {@link eventSocket.Event Event} event to the Esper engine.
+	 * @param event The {@link eventSocket.Event Event} to be sent to the Esper engine.
+	 */
 	public static void sendEvent(Event event) {
 
 		cepRT.sendEvent(event);

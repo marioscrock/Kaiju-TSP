@@ -8,8 +8,19 @@ import eps.listener.CEPListener;
 import spark.Request;
 import spark.Response;
 
+/**
+ * Class to handle KaijuAPI requests.
+ * @author Mario
+ *
+ */
 public class KaijuAPIHandler {
 	
+	/**
+	 * Static method to handle {@code POST /api/query?query=<query>}.
+	 * @param request The request to handle.
+	 * @param response The response.
+	 * @return The string to be sent as response.
+	 */
 	public static String fireQuery(Request request, Response response) {
 		
 		String query = request.queryParams("query");
@@ -31,6 +42,12 @@ public class KaijuAPIHandler {
 		
 	}
 	
+	/**
+	 * Static method to handle {@code POST /api/statement?statement=<statement>&msg=<msg>}.
+	 * @param request The request to handle.
+	 * @param response The response.
+	 * @return The string to be sent as response.
+	 */
 	public static String registerStatement(Request request, Response response) {
 		
 		EPStatement statement = EsperHandler.cepAdm.createEPL(request.queryParams("statement"));
@@ -41,6 +58,13 @@ public class KaijuAPIHandler {
 		
 		return "{ \"statementName\":\"" + statement.getName() + "\"}";
 	}
+	
+	/**
+	 * Static method to handle {@code POST /api/remove?statement=<stmt_code>}.
+	 * @param request The request to handle.
+	 * @param response The response.
+	 * @return The string to be sent as response.
+	 */
 	public static String removeStatement(Request request, Response response) throws Exception {
 		
 		String stmtName = request.queryParams("statement");
@@ -56,6 +80,12 @@ public class KaijuAPIHandler {
 		return "{}";
 	}
 	
+	/**
+	 * Static method to handle {@code GET /api/traces/all}.
+	 * @param request The request to handle.
+	 * @param response The response.
+	 * @return The string to be sent as response.
+	 */
 	public static String getAllTracesIds(Request request, Response response) {
 		
 		EPOnDemandQueryResult result = null;
@@ -81,6 +111,12 @@ public class KaijuAPIHandler {
 		return "{ \"traceIDsHex\":[]}";
 	}
 	
+	/**
+	 * Static method to handle {@code GET /api/traces/:id}.
+	 * @param request The request to handle.
+	 * @param response The response.
+	 * @return The string to be sent as response.
+	 */
 	public static String getTraceByTraceId(Request request, Response response) {
 		
 		response.type("application/json");
@@ -114,7 +150,13 @@ public class KaijuAPIHandler {
         
 		return "{ \"spans\":[]}";
 	}
-
+	
+	/**
+	 * Static method to handle {@code GET /api/traces?service=<service>}.
+	 * @param request The request to handle.
+	 * @param response The response.
+	 * @return The string to be sent as response.
+	 */
 	public static String getTracesByServiceName(Request request, Response response) {
     	
 		response.type("application/json");
@@ -149,6 +191,12 @@ public class KaijuAPIHandler {
 
 	}
 	
+	/**
+	 * Static method to handle {@code GET /api/logs/:key}.
+	 * @param request The request to handle.
+	 * @param response The response.
+	 * @return The string to be sent as response.
+	 */
 	public static String getLogsByKey(Request request, Response response) {
         
 		String key = request.params(":key");
@@ -168,6 +216,12 @@ public class KaijuAPIHandler {
 
 	}
 	
+	/**
+	 * Static method to handle {@code GET /api/dependencies/:traceId}.
+	 * @param request The request to handle.
+	 * @param response The response.
+	 * @return The string to be sent as response.
+	 */
 	public static String getDependenciesByTraceId(Request request, Response response) {
 		
 		String traceId = request.params(":traceId");
