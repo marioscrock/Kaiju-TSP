@@ -41,7 +41,8 @@ public class FakeCollector {
 		Thread webSocketThread = new Thread(ws);
     	webSocketThread.start();
     	
-    	 ch = new CollectorHandler();
+    	ch = new CollectorHandler();
+    	ch.setWebSocket(true);
     	
 		//Read batches from file
 		Gson gson = new Gson();
