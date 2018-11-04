@@ -16,6 +16,7 @@ import com.uber.tchannel.messages.ThriftResponse;
 import eps.EsperHandler;
 import thriftgen.Batch;
 import thriftgen.Collector;
+import websocket.JsonLDSerialize;
 import websocket.JsonTracesWS;
 
 /**
@@ -86,7 +87,7 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	
 	/**
 	 * Serialize a {@link thriftgen.Batch Batch} object to a {@link org.json.simple.JSONObject JSONObject} through
-	 * the {@link collector.JsonLDSerialize JsonLDSerialize} class.
+	 * the {@link websocket.JsonLDSerialize JsonLDSerialize} class.
 	 * @param batch Batch to be serialized
 	 * @return JSONObject representing the batch given as input
 	 * @throws Exception	If errors while processing the batch

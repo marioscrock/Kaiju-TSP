@@ -4,11 +4,11 @@ import java.util.List;
 
 import com.espertech.esper.client.EventBean;
 
-import collector.JsonLDSerialize;
 import thriftgen.Log;
 import thriftgen.Span;
 import thriftgen.SpanRef;
 import thriftgen.Tag;
+import websocket.JsonLDSerialize;
 
 /**
  * Class to convert {@link com.espertech.esper.client.EventBean EventBean} objects to a specific JSON representation.

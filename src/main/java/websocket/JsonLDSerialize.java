@@ -1,4 +1,4 @@
-package collector;
+package websocket;
 
 import java.util.List;
 

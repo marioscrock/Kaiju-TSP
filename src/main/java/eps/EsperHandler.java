@@ -106,7 +106,16 @@ public class EsperHandler {
 	    /*
 	     * START API
 	     */
-	    KaijuAPI.threadAPI();
+	    Thread APIThread = new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				KaijuAPI.initAPI();	
+			}
+			
+		});
+	    
+	    APIThread.run();
 	    
 	}
 	

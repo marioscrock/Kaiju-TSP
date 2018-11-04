@@ -67,22 +67,5 @@ public class KaijuAPI {
         http.get("/api/dependencies/:traceId", (request, response) -> KaijuAPIHandler.getDependenciesByTraceId(request, response));
 
     }
-    
-    /**
-     * Static method to launch the API in a separated thread.
-     */
-    public static void threadAPI() {
-    	
-    	Thread APIThread = new Thread(new Runnable() {
-			
-			@Override
-			public void run() {
-				KaijuAPI.initAPI();	
-			}
-			
-		});
-	    
-	    APIThread.run();
-    }
 
 }
