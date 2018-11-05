@@ -18,6 +18,9 @@ public class EsperStatements {
 	    cepAdm.createEPL("create schema TraceAnomaly(traceId string) inherits Anomaly");
 	    cepAdm.createEPL("create schema HighLatency3SigmaRule(serviceName string, operationName string,"
 	    		+ " spanId string, duration long, startTime long, hostname string) inherits TraceAnomaly");	
+	    cepAdm.createEPL("create schema ProcessAnomaly(hashProcess int) inherits Anomaly");
+		cepAdm.createEPL("create schema ProcessCPUHigherThan80(serviceName string,"
+		    		+ " hostname string, usagePercent float) inherits ProcessAnomaly");
 	}
 	
 	/**
@@ -151,10 +154,11 @@ public class EsperStatements {
 	 * Register a {@link eps.listener.CEPListener CEPListener} reporting the number of requests
 	 * grouped by hostname.
 	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param retentionTime Sliding time of the window.
 	 */
-	public static void gaugeRequestsPerHostname(EPAdministrator cepAdm) {
+	public static void gaugeRequestsPerHostname(EPAdministrator cepAdm, String retentionTime) {
 		EPStatement gaugeRequestsPerHostname = cepAdm.createEPL("select hostname, count(*)"
-	    		+ "from Batch[select process.tags.firstOf(t => t.key = 'hostname').getVStr() as hostname, * from spans as s where s.parentSpanId = 0]"
+	    		+ "from Batch[select process.tags.firstOf(t => t.key = 'hostname').getVStr() as hostname, * from spans as s where s.parentSpanId = 0]#time(" + retentionTime + ")"
 	    		+ "group by hostname");
 	    gaugeRequestsPerHostname.addListener(new CEPListener("Gauge per hostname: "));	
 	}
@@ -347,6 +351,39 @@ public class EsperStatements {
 	public static void systemEvents(EPAdministrator cepAdm) {
 	    EPStatement cepSystemEvents = cepAdm.createEPL("select * from SystemEvent");
 	    cepSystemEvents.addListener(new CEPListener("SystemEvent: "));	
+	}
+	
+	/**
+	 * Detect pattern {@code CommitEvent} followed by {@code Anomaly} events.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 */
+	public static void anomalyAfterCommit(EPAdministrator cepAdm) {
+		EPStatement anomalyAfterCommit = cepAdm.createEPL("select b.commit, a.* from pattern [" 
+				  + "b=CommitEvent -> every a=Anomaly where timer:within(15min)]"); 	
+		anomalyAfterCommit.addListener(new CEPListener("Anomaly after Commit: "));
+	}
+	    
+	/**
+	 * Generate detected {@code ProcessCPUHigherThan80} from Metric stream.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 */
+	public static void insertProcessCPUHigherThan80(EPAdministrator cepAdm) {
+	    cepAdm.createEPL("insert into ProcessCPUHigherThan80"
+	    		+ " select hashProcess, process.serviceName as serviceName, hostname, Float.parseFloat(fields('usage_percent')) as usagePercent"
+	    		+ " from Metric(name='docker_container_cpu') as m join ProcessesTable as p"
+	    		+ " where m.tags('host') =  p.hostname and"
+	    		+ " Float.parseFloat(fields('usage_percent')) > 80.0"
+	    		+ " output last every 10sec");
+	}
+	
+	/**
+	 * Detect pattern {@code HighLatency3SigmaRule} and {@code ProcessCPUHigherThan80} in same host within 30 sec.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 */
+	public static void highCPUandHighLatencySameHost(EPAdministrator cepAdm) {
+		EPStatement anomalyAfterCommit = cepAdm.createEPL("select a.hostname as hostname from pattern [" 
+				  + "a=ProcessCPUHigherThan80 and b=HighLatency3SigmaRule(hostname = a.hostname) where timer:within(30 sec)]"); 	
+		anomalyAfterCommit.addListener(new CEPListener("HighLatency3SigmaRule and ProcessCPUHigherThan80 same host: "));
 	}
 	
 	/**

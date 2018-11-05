@@ -71,7 +71,7 @@ public class EsperHandler {
 	    /*
 	     * STATEMENTS
 	     */
-//	    EsperStatements.gaugeRequestsPerHostname(cepAdm);
+//	    EsperStatements.gaugeRequestsPerHostname(cepAdm, retentionTime);
 //	    EsperStatements.errorLogs(cepAdm);
 	    
 //	    EsperStatements.topKOperationDuration(cepAdm, "10");
@@ -88,9 +88,14 @@ public class EsperHandler {
 	    // Three-sigma rule to detect anomalies (info https://en.wikipedia.org/wiki/68–95–99.7_rule)
 	    EsperStatements.highLatencies(cepAdm);
 	    EsperStatements.reportHighLatencies(cepAdm, "./anomalies.csv");
+	    EsperStatements.insertProcessCPUHigherThan80(cepAdm);
 	    
 	    // TAIL SAMPLING
 	    EsperStatements.tailSampling(cepAdm, "./sampled.txt");   
+	    
+	    //PATTERN
+	    EsperStatements.anomalyAfterCommit(cepAdm);
+	    EsperStatements.highCPUandHighLatencySameHost(cepAdm);
 	    
 	    /*
 	     * EVENTS
