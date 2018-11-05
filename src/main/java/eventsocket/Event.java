@@ -10,6 +10,7 @@ import java.util.Map;
  */
 public class Event {
 	
+	public Long timestamp;
 	public Map<String, String> event = new HashMap<>();
 	
 	/**
@@ -26,6 +27,22 @@ public class Event {
 	 */
 	public void setEvent(Map<String, String> event) {
 		this.event = event;
+	}
+	
+	/**
+	 * Get the timestamp of the event.
+	 * @return The timestamp of the event.
+	 */
+	public Long getTimestamp() {
+		return timestamp;
+	}
+	
+	/**
+	 * Set the timestamp of the event.
+	 * @param timestamp The timestamp of the event.
+	 */
+	public void setTimestamp(Long timestamp) {
+		this.timestamp = timestamp;
 	}
 	
 	@Override

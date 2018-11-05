@@ -1,5 +1,7 @@
 package eventsocket;
 
+import com.google.gson.Gson;
+
 /**
  * Simple class to test {@link eventsocket.ParserJson}.
  * @author Mario
@@ -57,12 +59,14 @@ public class ParserJsonTest {
 		String s3 = " {\n" + 
 				"    \"events\": [\n" + 
 				"        {\n" + 
+				"           \"timestamp\": 1458229140,\n" + 
 				"            \"event\": {\n" + 
 				"                \"event\": \"Commit\",\n" + 
 				"                \"commit_msg\": \"Fix connection pool\"\n" + 
 				"            }\n" + 
 				"		},\n" +
 				"      {\n" + 
+				"           \"timestamp\": 1458249140,\n" + 
 				"            \"event\": {\n" + 
 				"                \"event\": \"Alert_CPU\",\n" + 
 				"                \"alert_msg\": \"HighCPUUsage\"\n" + 
@@ -72,19 +76,20 @@ public class ParserJsonTest {
 				"    ]\n" + 
 				"}";
 		
-//		System.out.println(s1);
-//		System.out.println(s2);
-//		System.out.println(s3);
+		String s4 = " {\n" +
+				"		\"timestamp\": 1458229140,\n" + 
+				"       \"event\": {\n" + 
+				"       	\"event\": \"Commit\",\n" + 
+				"           \"commit_msg\": \"Fix connection pool\"\n" + 
+				"      	}\n" + 
+				"}";
 		
-		Thread t1 = new Thread(new ParserJson(s1));
-		Thread t2 = new Thread(new ParserJson(s2));
-		Thread t3 = new Thread(new ParserJson(s3));
-		t1.start();
-		t2.start();
-		t3.start();
-		t1.join();
-		t2.join();
-		t3.join();
+		Gson gson = new Gson();
+		
+		System.out.println(gson.fromJson(s1, Metric.class));
+		System.out.println(gson.fromJson(s2, Metric.class));
+		System.out.println(gson.fromJson(s3, Event.class));
+		System.out.println(gson.fromJson(s4, Event.class));
 
 	}
 
