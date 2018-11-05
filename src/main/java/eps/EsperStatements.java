@@ -384,7 +384,7 @@ public class EsperStatements {
 	 */
 	public static void highCPUandHighLatencySameHost(EPAdministrator cepAdm, String within) {
 		EPStatement anomalyAfterCommit = cepAdm.createEPL("select a.hostname as hostname from pattern [" 
-				  + "a=ProcessCPUHigherThan80 and b=HighLatency3SigmaRule(hostname = a.hostname) where timer:within(" + within +")]"); 	
+				  + "a=ProcessCPUHigherThan80 and b=HighLatency3SigmaRule(hostname = a.hostname) where timer:within(" + within + ")]"); 	
 		anomalyAfterCommit.addListener(new CEPListener("HighLatency3SigmaRule and ProcessCPUHigherThan80 same host: "));
 	}
 	
