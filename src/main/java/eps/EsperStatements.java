@@ -354,12 +354,13 @@ public class EsperStatements {
 	}
 	
 	/**
-	 * Detect pattern {@code CommitEvent} followed by {@code Anomaly} events.
+	 * Detect pattern {@code CommitEvent} followed by {@code Anomaly} events within {@code within} parameter.
 	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param within String representing within time for pattern detection.
 	 */
-	public static void anomalyAfterCommit(EPAdministrator cepAdm) {
+	public static void anomalyAfterCommit(EPAdministrator cepAdm, String within) {
 		EPStatement anomalyAfterCommit = cepAdm.createEPL("select b.commit, a.* from pattern [" 
-				  + "b=CommitEvent -> every a=Anomaly where timer:within(15min)]"); 	
+				  + "b=CommitEvent -> every a=Anomaly where timer:within(" + within +")]"); 	
 		anomalyAfterCommit.addListener(new CEPListener("Anomaly after Commit: "));
 	}
 	    
@@ -377,12 +378,13 @@ public class EsperStatements {
 	}
 	
 	/**
-	 * Detect pattern {@code HighLatency3SigmaRule} and {@code ProcessCPUHigherThan80} in same host within 30 sec.
+	 * Detect pattern {@code HighLatency3SigmaRule} and {@code ProcessCPUHigherThan80} in same host within {@code within} parameter.
 	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param within String representing within time for pattern detection.
 	 */
-	public static void highCPUandHighLatencySameHost(EPAdministrator cepAdm) {
+	public static void highCPUandHighLatencySameHost(EPAdministrator cepAdm, String within) {
 		EPStatement anomalyAfterCommit = cepAdm.createEPL("select a.hostname as hostname from pattern [" 
-				  + "a=ProcessCPUHigherThan80 and b=HighLatency3SigmaRule(hostname = a.hostname) where timer:within(30 sec)]"); 	
+				  + "a=ProcessCPUHigherThan80 and b=HighLatency3SigmaRule(hostname = a.hostname) where timer:within(" + within +")]"); 	
 		anomalyAfterCommit.addListener(new CEPListener("HighLatency3SigmaRule and ProcessCPUHigherThan80 same host: "));
 	}
 	

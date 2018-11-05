@@ -94,8 +94,8 @@ public class EsperHandler {
 	    EsperStatements.tailSampling(cepAdm, "./sampled.txt");   
 	    
 	    //PATTERN
-	    EsperStatements.anomalyAfterCommit(cepAdm);
-	    EsperStatements.highCPUandHighLatencySameHost(cepAdm);
+	    EsperStatements.anomalyAfterCommit(cepAdm, "15min");
+	    EsperStatements.highCPUandHighLatencySameHost(cepAdm, "10sec");
 	    
 	    /*
 	     * EVENTS
