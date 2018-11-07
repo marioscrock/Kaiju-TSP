@@ -100,13 +100,13 @@ public class EsperHandler {
 	    /*
 	     * EVENTS
 	     */
-//	    EsperStatements.insertCommitEvents(cepAdm);   
-//	    EsperStatements.systemEvents(cepAdm);
+	    EsperStatements.insertCommitEvents(cepAdm);   
+	    EsperStatements.systemEvents(cepAdm);
 	    
 	    /*
 	     * DEBUG socket
 	     */
-//	    EsperStatements.debugStatements(cepAdm);
+	    EsperStatements.debugStatements(cepAdm);
 	    
 	    /*
 	     * START API

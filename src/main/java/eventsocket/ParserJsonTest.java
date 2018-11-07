@@ -60,31 +60,39 @@ public class ParserJsonTest {
 				"    \"events\": [\n" + 
 				"        {\n" + 
 				"           \"timestamp\": 1458229140,\n" + 
-				"            \"event\": {\n" + 
-				"                \"event\": \"Commit\",\n" + 
-				"                \"commit_msg\": \"Fix connection pool\"\n" + 
+				"            \"payload\": {\n" +  
+				"                \"commit_msg\": \"Fix connection pool\"\n" + 		
+				"            },\n" + 
+				"            \"context\": {\n" +
+				"                \"commit_id\" : \"de9c1a087f47605cd7e33a585ee34d628a4a49b4\"\n" +			
 				"            }\n" + 
 				"		},\n" +
 				"      {\n" + 
-				"           \"timestamp\": 1458249140,\n" + 
-				"            \"event\": {\n" + 
-				"                \"event\": \"Alert_CPU\",\n" + 
-				"                \"alert_msg\": \"HighCPUUsage\"\n" + 
-
+				"           \"timestamp\": 1458249140,\n" +
+				"            \"payload\": {\n" +  
+				"                \"alert_msg\": \"HighCPUUsage\",\n" + 
+				"				 \"percentage_cpu\": \"80\"\n" +				
+				"            },\n" + 
+				"            \"context\": {\n" +
+				"                \"alert_name\" : \"HighCPUUsage\"\n" +			
 				"            }\n" + 
 				"      }\n" + 
 				"    ]\n" + 
 				"}";
 		
-		String s4 = " {\n" +
-				"		\"timestamp\": 1458229140,\n" + 
-				"       \"event\": {\n" + 
-				"       	\"event\": \"Commit\",\n" + 
-				"           \"commit_msg\": \"Fix connection pool\"\n" + 
-				"      	}\n" + 
+		String s4 = "{" + 
+				"\"timestamp\": 1458229140," + 
+				"\"payload\": {" +  
+				"\"commit_msg\": \"Fix connection pool\"" + 		
+				"}," + 
+				"\"context\": {" +
+				"\"commit_id\" : \"de9c1a087f47605cd7e33a585ee34d628a4a49b4\"" +			
+				"}" + 
 				"}";
 		
 		Gson gson = new Gson();
+		
+		System.out.println(s4);
 		
 		System.out.println(gson.fromJson(s1, Metric.class));
 		System.out.println(gson.fromJson(s2, Metric.class));

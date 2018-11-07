@@ -4,29 +4,46 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Class representing a generic event as a {@code Map<String, String>}.
+ * Class representing a generic event.
  * @author Mario
  *
  */
 public class Event {
 	
 	public Long timestamp;
-	public Map<String, String> event = new HashMap<>();
+	public Map<String, String> payload = new HashMap<>();
+	public Map<String, String> context = new HashMap<>();
 	
 	/**
-	 * Get the event {@code Map<String, String>}.
-	 * @return The event {@code Map<String, String>}.
+	 * Get the event payload {@code Map<String, String>}.
+	 * @return The event payload {@code Map<String, String>}.
 	 */
-	public Map<String, String> getEvent() {
-		return event;
+	public Map<String, String> getPayload() {
+		return payload;
 	}
 	
 	/**
-	 * Set the event {@code Map<String, String>}
-	 * @param event The event {@code Map<String, String>}
+	 * Set the event payload {@code Map<String, String>}
+	 * @param event The event payload {@code Map<String, String>}
 	 */
-	public void setEvent(Map<String, String> event) {
-		this.event = event;
+	public void setPayload(Map<String, String> payload) {
+		this.payload = payload;
+	}
+	
+	/**
+	 * Get the event context {@code Map<String, String>}.
+	 * @return The event context {@code Map<String, String>}.
+	 */
+	public Map<String, String> getContext() {
+		return context;
+	}
+	
+	/**
+	 * Set the event context {@code Map<String, String>}
+	 * @param event The event context {@code Map<String, String>}
+	 */
+	public void setContext(Map<String, String> context) {
+		this.context = context;
 	}
 	
 	/**
@@ -47,7 +64,7 @@ public class Event {
 	
 	@Override
 	public String toString() {
-		return "Event [event=" + event + "]";
+		return "Event [timestamp=" + timestamp + ", payload=" + payload + ", context=" + context + "]";
 	}
 
 }

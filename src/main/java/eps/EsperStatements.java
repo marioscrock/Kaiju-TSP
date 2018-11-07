@@ -338,10 +338,10 @@ public class EsperStatements {
 	 */
 	public static void insertCommitEvents(EPAdministrator cepAdm) {
 		  cepAdm.createEPL("insert into CommitEvent"
-		    		+ " select java.time.Instant.now().toEpochMilli() as timestamp, event('commit') as commit,"
-		    		+ " event('commitMsg') as commitMsg"
+		    		+ " select timestamp, context('commit_id') as commit,"
+		    		+ " payload('commit_msg') as commitMsg"
 		    		+ " from Event"
-		    		+ " where event('type') = 'CommitEvent'"); 		
+		    		+ " where context.containsKey('commit_id')"); 		
 	}
 	
 	/**
