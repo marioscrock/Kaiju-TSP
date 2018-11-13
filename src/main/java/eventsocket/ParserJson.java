@@ -39,27 +39,36 @@ public class ParserJson implements Runnable {
 		
 		try {
 			
-			JsonObject jObj = (JsonObject) parser.parse(jsonToParse);
-		
-			if (jObj.get("metrics") == null){	
-				
-				if(jObj.get("events") == null) {
-					//Metric fields are now a map String:String
-					EsperHandler.sendMetric(gson.fromJson(jsonToParse, Metric.class));
-				} else {
-					Event[] eventsParsed = gson.fromJson(jObj.get("events"), Event[].class);
-					for (int i = 0; i < eventsParsed.length; i++) {
-						EsperHandler.sendEvent((Event) eventsParsed[i]);
-					}
-				}
-				
-			} else {
-				
-				Metric[] metricsParsed = gson.fromJson(jObj.get("metrics"), Metric[].class);
-				for (int i = 0; i < metricsParsed.length; i++) {
-					EsperHandler.sendMetric((Metric) metricsParsed[i]);
-				}
+			JsonObject jObj = (JsonObject) parser.parse(jsonToParse);	
+			
+			//METRICS
+			if (jObj.get("name") != null){
+				EsperHandler.sendMetric(gson.fromJson(jsonToParse, Metric.class));
+				return;
 			}
+			
+			if (jObj.get("metrics") != null){
+				Metric[] metricsParsed = gson.fromJson(jObj.get("metrics"), Metric[].class);
+				for (int i = 0; i < metricsParsed.length; i++)
+					EsperHandler.sendMetric((Metric) metricsParsed[i]);
+				return;
+			}
+			
+			//EVENTS
+			if (jObj.get("payload") != null){
+				EsperHandler.sendEvent(gson.fromJson(jsonToParse, Event.class));
+				return;
+			}
+				
+			if(jObj.get("events") != null) {
+				Event[] eventsParsed = gson.fromJson(jObj.get("events"), Event[].class);
+				for (int i = 0; i < eventsParsed.length; i++)
+					EsperHandler.sendEvent((Event) eventsParsed[i]);
+				return;
+			}
+				
+			
+				
 		} catch (Exception e){
 			log.info("Error parsing json " + jsonToParse + " | LINE DISCARDED");
 			log.info(e.getClass().getSimpleName());
