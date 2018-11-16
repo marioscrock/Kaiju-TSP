@@ -28,99 +28,103 @@ public class EsperHandler {
 	 */
 	public static void initializeHandler() {
 		
-		//The Configuration is meant only as an initialization-time object.
-	    Configuration cepConfig = new Configuration();
-	    
-	    /*
-	     * Basic EVENTS
-	     */
-	    addEventTypes(cepConfig);
-	 
-	    // We setup the engine
-	    EPServiceProvider cep = EPServiceProviderManager.getProvider("myCEPEngine", cepConfig);
-	    
-	    cepRT = cep.getEPRuntime();
-	    cepAdm = cep.getEPAdministrator();
-	    
-	    /*
-	     * Additional EVENTS
-	     */
-	    EsperStatements.defineAnomalyEvents(cepAdm);
-	    EsperStatements.defineSystemEvents(cepAdm);
-	    
-	    /*
-	     * TABLES and NAMED WINDOWS
-	     */
-	    // TRACES WINDOW (traceId PK)
-	    EsperStatements.defineTracesWindow(cepAdm, retentionTime);
-	    // PROCESSES TABLE (hashProcess PK, process)
-	    EsperStatements.defineProcessesTable(cepAdm);
-	    // SPANS WINDOW (span, hashProcess, serviceName)
-	    EsperStatements.defineSpansWindow(cepAdm, retentionTime);
-	    // DEPENDENCIES WINDOW (traceIdHexFrom, spanIdFrom, traceIdHexTo, spanIdTo)
-	    EsperStatements.defineDependenciesWindow(cepAdm, retentionTime);
-	    
-	    // MEAN DURATION PER OPERATION TABLE (serviceName PK, operationName PK, meanDuration, m2, counter)
-	    //Welford's Online algorithm to compute running mean and variance
-	    EsperStatements.defineMeanDurationPerOperationTable(cepAdm);
-//	    EsperStatements.defineMeanDurationPerOperationTableResetCounter(cepAdm, 1000);
-	    
-	    //TRACES TO BE SAMPLED WINDOW (traceId)
-	    EsperStatements.defineTracesToBeSampledWindow(cepAdm, retentionTime);
-	    
-	    /*
-	     * STATEMENTS
-	     */
-//	    EsperStatements.gaugeRequestsPerHostname(cepAdm, retentionTime);
-//	    EsperStatements.errorLogs(cepAdm);
-	    
-//	    EsperStatements.topKOperationDuration(cepAdm, "10");
-//	    EsperStatements.perCustomerDuration(cepAdm);
-	    
-	    // RESOURCE USAGE ATTRIBUTION
-	    // CE -> Contained Event Selection
-//	    EsperStatements.resourceUsageCustomerCE(cepAdm, retentionTime);
-//	    EsperStatements.resourceUsageCustomer(cepAdm, retentionTime);
-//	    EsperStatements.resourceUsageSessionCE(cepAdm, retentionTime);
-//	    EsperStatements.resourceUsageSession(cepAdm, retentionTime);
-	    
-	    // ANOMALIES DETECTION
-	    // Three-sigma rule to detect anomalies (info https://en.wikipedia.org/wiki/68–95–99.7_rule)
-	    EsperStatements.highLatencies(cepAdm);
-	    EsperStatements.reportHighLatencies(cepAdm, "./anomalies.csv");
-	    EsperStatements.insertProcessCPUHigherThan80(cepAdm);
-	    
-	    // TAIL SAMPLING
-	    EsperStatements.tailSampling(cepAdm, "./sampled.txt");   
-	    
-	    //PATTERN
-	    EsperStatements.anomalyAfterCommit(cepAdm, "15min");
-	    EsperStatements.highCPUandHighLatencySameHost(cepAdm, "10sec");
-	    
-	    /*
-	     * EVENTS
-	     */
-	    EsperStatements.insertCommitEvents(cepAdm);   
-	    EsperStatements.systemEvents(cepAdm);
-	    
-	    /*
-	     * DEBUG socket
-	     */
-	    EsperStatements.debugStatements(cepAdm);
-	    
-	    /*
-	     * START API
-	     */
-	    Thread APIThread = new Thread(new Runnable() {
+		//Check not already initialized
+		if(cepRT == null) {
 			
-			@Override
-			public void run() {
-				KaijuAPI.initAPI();	
-			}
-			
-		});
-	    
-	    APIThread.run();
+			//The Configuration is meant only as an initialization-time object.
+		    Configuration cepConfig = new Configuration();
+		    
+		    /*
+		     * Basic EVENTS
+		     */
+		    addEventTypes(cepConfig);
+		 
+		    // We setup the engine
+		    EPServiceProvider cep = EPServiceProviderManager.getProvider("myCEPEngine", cepConfig);
+		    
+		    cepRT = cep.getEPRuntime();
+		    cepAdm = cep.getEPAdministrator();
+		    
+		    /*
+		     * Additional EVENTS
+		     */
+		    EsperStatements.defineAnomalyEvents(cepAdm);
+		    EsperStatements.defineSystemEvents(cepAdm);
+		    
+		    /*
+		     * TABLES and NAMED WINDOWS
+		     */
+		    // TRACES WINDOW (traceId PK)
+		    EsperStatements.defineTracesWindow(cepAdm, retentionTime);
+		    // PROCESSES TABLE (hashProcess PK, process)
+		    EsperStatements.defineProcessesTable(cepAdm);
+		    // SPANS WINDOW (span, hashProcess, serviceName)
+		    EsperStatements.defineSpansWindow(cepAdm, retentionTime);
+		    // DEPENDENCIES WINDOW (traceIdHexFrom, spanIdFrom, traceIdHexTo, spanIdTo)
+		    EsperStatements.defineDependenciesWindow(cepAdm, retentionTime);
+		    
+		    // MEAN DURATION PER OPERATION TABLE (serviceName PK, operationName PK, meanDuration, m2, counter)
+		    //Welford's Online algorithm to compute running mean and variance
+		    EsperStatements.defineMeanDurationPerOperationTable(cepAdm);
+	//	    EsperStatements.defineMeanDurationPerOperationTableResetCounter(cepAdm, 1000);
+		    
+		    //TRACES TO BE SAMPLED WINDOW (traceId)
+		    EsperStatements.defineTracesToBeSampledWindow(cepAdm, retentionTime);
+		    
+		    /*
+		     * STATEMENTS
+		     */
+	//	    EsperStatements.gaugeRequestsPerHostname(cepAdm, retentionTime);
+	//	    EsperStatements.errorLogs(cepAdm);
+		    
+	//	    EsperStatements.topKOperationDuration(cepAdm, "10");
+	//	    EsperStatements.perCustomerDuration(cepAdm);
+		    
+		    // RESOURCE USAGE ATTRIBUTION
+		    // CE -> Contained Event Selection
+	//	    EsperStatements.resourceUsageCustomerCE(cepAdm, retentionTime);
+	//	    EsperStatements.resourceUsageCustomer(cepAdm, retentionTime);
+	//	    EsperStatements.resourceUsageSessionCE(cepAdm, retentionTime);
+	//	    EsperStatements.resourceUsageSession(cepAdm, retentionTime);
+		    
+		    // ANOMALIES DETECTION
+		    // Three-sigma rule to detect anomalies (info https://en.wikipedia.org/wiki/68–95–99.7_rule)
+		    EsperStatements.highLatencies(cepAdm);
+		    EsperStatements.reportHighLatencies(cepAdm, "./anomalies.csv");
+		    EsperStatements.insertProcessCPUHigherThan80(cepAdm);
+		    
+		    // TAIL SAMPLING
+		    EsperStatements.tailSampling(cepAdm, "./sampled.txt");   
+		    
+		    //PATTERN
+		    EsperStatements.anomalyAfterCommit(cepAdm, "15min");
+		    EsperStatements.highCPUandHighLatencySameHost(cepAdm, "10sec");
+		    
+		    /*
+		     * EVENTS
+		     */
+		    EsperStatements.insertCommitEvents(cepAdm);   
+		    EsperStatements.systemEvents(cepAdm);
+		    
+		    /*
+		     * DEBUG socket
+		     */
+		    EsperStatements.debugStatements(cepAdm);
+		    
+		    /*
+		     * START API
+		     */
+		    Thread APIThread = new Thread(new Runnable() {
+				
+				@Override
+				public void run() {
+					KaijuAPI.initAPI();	
+				}
+				
+			});
+		    
+		    APIThread.run();
+		}
 	    
 	}
 	
