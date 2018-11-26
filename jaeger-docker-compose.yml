@@ -1,0 +1,67 @@
+version: '3'
+services:
+    jaeger-collector:
+      image: jaegertracing/jaeger-collector:1.5
+      command: ["/go/bin/collector-linux", "--cassandra.keyspace=jaeger_v1_dc1", "--cassandra.servers=cassandra", "--collector.zipkin.http-port=9411",
+       "--collector.queue-size=1000000"] #Added to avoid losing spans
+      ports:
+        - "14269"
+        - "14268:14268"
+        - "14267:14267"
+        - "9411:9411"
+      restart: on-failure
+      networks:
+        - jaeger-net
+      depends_on:
+        - cassandra-schema
+
+    jaeger-query:
+      image: jaegertracing/jaeger-query:1.5
+      command: ["/go/bin/query-linux", "--query.static-files=/go/jaeger-ui/", "--cassandra.keyspace=jaeger_v1_dc1", "--cassandra.servers=cassandra"]
+      ports:
+        - "16686:16686"
+        - "16687"
+      restart: on-failure
+      networks:
+        - jaeger-net
+      depends_on:
+        - cassandra-schema
+        
+    kaiju-collector:
+      image: marioscrock/kaiju:kaiju-collector
+      command: ["java","-jar","/usr/app/kaiju-0.0.1-SNAPSHOT-jar-with-dependencies.jar","${RETENTION_TIME:-1min}"]
+      ports:
+        - "2042:2042" 
+        - "4567:4567"
+        - "9278:9278"
+        - "9876:9876"
+      restart: on-failure
+      networks:
+        - jaeger-net
+
+    cassandra:
+      image: cassandra:3.9
+      networks:
+        - jaeger-net
+
+    cassandra-schema:
+      image: jaegertracing/jaeger-cassandra-schema:1.5
+      networks:
+        - jaeger-net
+      depends_on:
+        - cassandra
+    
+    telegraf:
+      image: "telegraf:latest"
+      environment:
+        INFLUX_ADDRESS: "${INFLUX_ADDRESS:-http://10.0.0.28:8086}"
+      networks:
+        - jaeger-net
+      volumes:
+        - ${TELEGRAF_CONF_FILE:-./etc/telegraf/}:/etc/telegraf
+        #To enable [inputs.docker] within a container
+        - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  jaeger-net:
+    driver: bridge
