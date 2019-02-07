@@ -45,71 +45,8 @@ public class EsperHandler {
 		    cepRT = cep.getEPRuntime();
 		    cepAdm = cep.getEPAdministrator();
 		    
-		    /*
-		     * Additional EVENTS
-		     */
-		    EsperStatements.defineAnomalyEvents(cepAdm);
-		    EsperStatements.defineSystemEvents(cepAdm);
-		    
-		    /*
-		     * TABLES and NAMED WINDOWS
-		     */
-		    // TRACES WINDOW (traceId PK)
-		    EsperStatements.defineTracesWindow(cepAdm, retentionTime);
-		    // PROCESSES TABLE (hashProcess PK, process)
-		    EsperStatements.defineProcessesTable(cepAdm);
-		    // SPANS WINDOW (span, hashProcess, serviceName)
-		    EsperStatements.defineSpansWindow(cepAdm, retentionTime);
-		    // DEPENDENCIES WINDOW (traceIdHexFrom, spanIdFrom, traceIdHexTo, spanIdTo)
-		    EsperStatements.defineDependenciesWindow(cepAdm, retentionTime);
-		    
-		    // MEAN DURATION PER OPERATION TABLE (serviceName PK, operationName PK, meanDuration, m2, counter)
-		    //Welford's Online algorithm to compute running mean and variance
-		    EsperStatements.defineMeanDurationPerOperationTable(cepAdm);
-	//	    EsperStatements.defineMeanDurationPerOperationTableResetCounter(cepAdm, 1000);
-		    
-		    //TRACES TO BE SAMPLED WINDOW (traceId)
-		    EsperStatements.defineTracesToBeSampledWindow(cepAdm, retentionTime);
-		    
-		    /*
-		     * STATEMENTS
-		     */
-	//	    EsperStatements.gaugeRequestsPerHostname(cepAdm, retentionTime);
-	//	    EsperStatements.errorLogs(cepAdm);
-		    
-	//	    EsperStatements.topKOperationDuration(cepAdm, "10");
-	//	    EsperStatements.perCustomerDuration(cepAdm);
-		    
-		    // RESOURCE USAGE ATTRIBUTION
-		    // CE -> Contained Event Selection
-	//	    EsperStatements.resourceUsageCustomerCE(cepAdm, retentionTime);
-	//	    EsperStatements.resourceUsageCustomer(cepAdm, retentionTime);
-	//	    EsperStatements.resourceUsageSessionCE(cepAdm, retentionTime);
-	//	    EsperStatements.resourceUsageSession(cepAdm, retentionTime);
-		    
-		    // ANOMALIES DETECTION
-		    // Three-sigma rule to detect anomalies (info https://en.wikipedia.org/wiki/68–95–99.7_rule)
-		    EsperStatements.highLatencies(cepAdm);
-		    EsperStatements.reportHighLatencies(cepAdm, "./anomalies.csv");
-		    EsperStatements.insertProcessCPUHigherThan80(cepAdm);
-		    
-		    // TAIL SAMPLING
-		    EsperStatements.tailSampling(cepAdm, "./sampled.txt");   
-		    
-		    //PATTERN
-		    EsperStatements.anomalyAfterCommit(cepAdm, "15min");
-		    EsperStatements.highCPUandHighLatencySameHost(cepAdm, "10sec");
-		    
-		    /*
-		     * EVENTS
-		     */
-		    EsperStatements.insertCommitEvents(cepAdm);   
-		    EsperStatements.systemEvents(cepAdm);
-		    
-		    /*
-		     * DEBUG socket
-		     */
-		    EsperStatements.debugStatements(cepAdm);
+		    // True if taken from file, false if default statements
+		    initializeStatements(cepAdm, true);
 		    
 		    /*
 		     * START API
@@ -128,6 +65,16 @@ public class EsperHandler {
 	    
 	}
 	
+	private static void initializeStatements(EPAdministrator cepAdm, boolean fromFile) {
+		
+		if (fromFile) {
+			EsperStatements.parseStatements(cepAdm, retentionTime);
+		} else {
+			EsperStatements.defaultStatements(cepAdm, retentionTime);
+		}
+		
+	}
+
 	private static void addEventTypes(Configuration cepConfig) {
 		
 	    // We register thriftgen classes as objects the engine will have to handle

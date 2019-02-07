@@ -1,5 +1,16 @@
 package eps;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.espertech.esper.client.EPAdministrator;
 import com.espertech.esper.client.EPStatement;
 
@@ -8,6 +19,8 @@ import eps.listener.CEPListenerHighLatencies;
 import eps.listener.CEPTailSamplingListener;
 
 public class EsperStatements {
+	
+	private final static Logger log = LoggerFactory.getLogger(EsperStatements.class);
 	
 	/**
 	 * Define anomalies events.
@@ -149,45 +162,7 @@ public class EsperStatements {
 	    		+ " when not matched"
 	    		+ " then insert into TracesToBeSampledWindow select a.traceId as traceId");
 	}
-	
-	/**
-	 * Register a {@link eps.listener.CEPListener CEPListener} reporting the number of requests
-	 * grouped by hostname.
-	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
-	 * @param retentionTime Sliding time of the window.
-	 */
-	public static void gaugeRequestsPerHostname(EPAdministrator cepAdm, String retentionTime) {
-		EPStatement gaugeRequestsPerHostname = cepAdm.createEPL("select hostname, count(*)"
-	    		+ "from Batch[select process.tags.firstOf(t => t.key = 'hostname').getVStr() as hostname, * from spans as s where s.parentSpanId = 0]#time(" + retentionTime + ")"
-	    		+ "group by hostname");
-	    gaugeRequestsPerHostname.addListener(new CEPListener("Gauge per hostname: "));	
-	}
-	
-	/**
-	 * Register a {@link eps.listener.CEPListener CEPListener} reporting all {@code (spanId, fields)} for each log with "error" as key.
-	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
-	 */
-	public static void errorLogs(EPAdministrator cepAdm) {
-		EPStatement errorLogs = cepAdm.createEPL("select Long.toHexString(spanId) as spanId, f.* from " +
-			    " Span[select spanId, * from logs][select * from fields as f where f.key=\"error\"]"); 
-		errorLogs.addListener(new CEPListener("Error: "));
-	}
-	
-	/**
-	 * Register a {@link eps.listener.CEPListener CEPListener} reporting the top-{@code K} operation
-	 * given their mean duration.
-	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
-	 * @param K
-	 */
-	public static void topKOperationDuration(EPAdministrator cepAdm, String K) {
-		EPStatement tableDuration = cepAdm.createEPL("select serviceName, operationName, meanDuration, (m2/counter) as variance, counter"
-	    		+ " from MeanDurationPerOperation"
-	    		+ " output snapshot every 5 seconds"
-	    		+ " order by meanDuration desc"
-	    		+ " limit " + K);
-	    tableDuration.addListener(new CEPListener("Top-" + K + " operation duration: "));
-		
-	}
+
 	
 	/**
 	 * Register a {@link eps.listener.CEPListener CEPListener} reporting the average duration of requests grouped by
@@ -400,6 +375,114 @@ public class EsperStatements {
 	    //EVENTS listener
 	    EPStatement cepEvents = cepAdm.createEPL("select * from Event"); 
 	    cepEvents.addListener(new CEPListener("Event: "));	
+	}
+
+	public static void defaultStatements(EPAdministrator cepAdm, String retentionTime) {
+		
+		/*
+	     * Additional EVENTS
+	     */
+	    EsperStatements.defineAnomalyEvents(cepAdm);
+	    EsperStatements.defineSystemEvents(cepAdm);
+	    
+	    /*
+	     * TABLES and NAMED WINDOWS
+	     */
+	    // TRACES WINDOW (traceId PK)
+	    EsperStatements.defineTracesWindow(cepAdm, retentionTime);
+	    // PROCESSES TABLE (hashProcess PK, process)
+	    EsperStatements.defineProcessesTable(cepAdm);
+	    // SPANS WINDOW (span, hashProcess, serviceName)
+	    EsperStatements.defineSpansWindow(cepAdm, retentionTime);
+	    // DEPENDENCIES WINDOW (traceIdHexFrom, spanIdFrom, traceIdHexTo, spanIdTo)
+	    EsperStatements.defineDependenciesWindow(cepAdm, retentionTime);
+	    
+	    // MEAN DURATION PER OPERATION TABLE (serviceName PK, operationName PK, meanDuration, m2, counter)
+	    //Welford's Online algorithm to compute running mean and variance
+	    EsperStatements.defineMeanDurationPerOperationTable(cepAdm);
+//	    EsperStatements.defineMeanDurationPerOperationTableResetCounter(cepAdm, 1000);
+	    
+	    //TRACES TO BE SAMPLED WINDOW (traceId)
+	    EsperStatements.defineTracesToBeSampledWindow(cepAdm, retentionTime);
+	    
+	    /*
+	     * STATEMENTS
+	     */
+//	    EsperStatements.gaugeRequestsPerHostname(cepAdm, retentionTime);
+//	    EsperStatements.errorLogs(cepAdm);
+	    
+//	    EsperStatements.topKOperationDuration(cepAdm, "10");
+//	    EsperStatements.perCustomerDuration(cepAdm);
+	    
+	    // RESOURCE USAGE ATTRIBUTION
+	    // CE -> Contained Event Selection
+//	    EsperStatements.resourceUsageCustomerCE(cepAdm, retentionTime);
+//	    EsperStatements.resourceUsageCustomer(cepAdm, retentionTime);
+//	    EsperStatements.resourceUsageSessionCE(cepAdm, retentionTime);
+//	    EsperStatements.resourceUsageSession(cepAdm, retentionTime);
+	    
+	    // ANOMALIES DETECTION
+	    // Three-sigma rule to detect anomalies (info https://en.wikipedia.org/wiki/68–95–99.7_rule)
+	    EsperStatements.highLatencies(cepAdm);
+	    EsperStatements.reportHighLatencies(cepAdm, "./anomalies.csv");
+	    EsperStatements.insertProcessCPUHigherThan80(cepAdm);
+	    
+	    // TAIL SAMPLING
+	    EsperStatements.tailSampling(cepAdm, "./sampled.txt");   
+	    
+	    //PATTERN
+	    EsperStatements.anomalyAfterCommit(cepAdm, "15min");
+	    EsperStatements.highCPUandHighLatencySameHost(cepAdm, "10sec");
+	    
+	    /*
+	     * EVENTS
+	     */
+	    EsperStatements.insertCommitEvents(cepAdm);   
+	    EsperStatements.systemEvents(cepAdm);
+	    
+	    /*
+	     * DEBUG socket
+	     */
+	    EsperStatements.debugStatements(cepAdm);
+		
+	}
+
+	public static void parseStatements(EPAdministrator cepAdm, String retentionTime) {
+		
+		List<String> replaced = new ArrayList<String>();
+		
+		try (Stream<String> lines = Files.lines(Paths.get("./stmts/statements.txt"))) {
+			   replaced = lines
+			       .map(line -> line.replaceAll(":retentionTime:", retentionTime))
+			       .collect(Collectors.toList());
+		} catch (IOException e) {
+			log.error("Error in reading statements from file: " + e.getMessage());
+		}
+		
+		try {
+			for (String s : replaced) {
+				String[] s_array = s.split("=", 2);
+				
+				String[] prefix = s_array[0].split(",");
+				for(String key : prefix) {
+					//TODO
+					switch (key) {
+					case "value":	
+						break;
+					default:
+						break;
+					}
+				}	
+				
+				String s_stmt = s_array[1];
+				EPStatement stmt = cepAdm.createEPL(s_stmt);
+				stmt.addListener(new CEPListener(""));
+			}	
+		    		    
+		} catch (Exception e) {
+			log.error("Failed validating statements file: " + e.getMessage());
+		}
+		
 	}
 
 }
