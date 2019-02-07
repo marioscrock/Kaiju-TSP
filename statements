@@ -1,0 +1,3 @@
+listener:simple,message:Gauge per hostname=select hostname, count(*) from Batch[select process.tags.firstOf(t => t.key = 'hostname').getVStr() as hostname, * from spans as s where s.parentSpanId = 0]#time(:retentionTime:) group by hostname
+listener:simple,message:Error logs=select Long.toHexString(spanId) as spanId, f.* from Span[select spanId, * from logs][select * from fields as f where f.key="error"
+listener:simple,message:Top 5 operation duration=select serviceName, operationName, meanDuration, (m2/counter) as variance, counter from MeanDurationPerOperation output snapshot every 5 seconds order by meanDuration desc limit 5
