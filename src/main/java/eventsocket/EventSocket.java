@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
  */
 public class EventSocket implements Runnable {
 	
+	public static int port = 9876;
 	private final static Logger log = LoggerFactory.getLogger(EventSocket.class);
 	
 	/**
@@ -28,11 +29,11 @@ public class EventSocket implements Runnable {
 		ServerSocket serverSocket = null;
 		
 		try {
-			serverSocket = new ServerSocket(9876);
+			serverSocket = new ServerSocket(port);
 			Socket clientSocket = serverSocket.accept();
 			BufferedReader inputReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 			
-			log.info("Starting socket");
+			log.info("Starting socket on port " + Integer.toString(port) + " listening for incoming events");
 			
 			String line;
 			while ((line = inputReader.readLine()) != null) {

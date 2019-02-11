@@ -19,9 +19,12 @@ import eventsocket.Metric;
 public class EsperHandler {
 	
 	public static String retentionTime = "2min";
+	public static String mode = "traces"; //traces, metrics, logs or high-level
 	
 	protected static EPRuntime cepRT;
 	protected static EPAdministrator cepAdm;
+
+	
 	
 	/**
 	 * Static method to initialize the Esper Engine and the selected statements, the Kaiju API.

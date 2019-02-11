@@ -5,9 +5,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.thrift.TException;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.uber.tchannel.api.handlers.ThriftRequestHandler;
 import com.uber.tchannel.messages.ThriftRequest;
@@ -16,8 +13,6 @@ import com.uber.tchannel.messages.ThriftResponse;
 import eps.EsperHandler;
 import thriftgen.Batch;
 import thriftgen.Collector;
-import websocket.JsonLDSerialize;
-import websocket.JsonTracesWS;
 
 /**
  * Class to handle incoming batches. It forwards batches to the {@link eps.EsperHandler EsperHandler} and: <ul>
@@ -30,16 +25,11 @@ import websocket.JsonTracesWS;
  *
  */
 public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatches_args, Collector.submitBatches_result> {
-	
-	private final static Logger log = LoggerFactory.getLogger(CollectorHandler.class);
-	
+		
 	private RecordCollector thriftTimingCollector;
-	private RecordCollector jsonTimingCollector;
 	private AtomicInteger numbBatches;
 	
-	private boolean webSocket;
 	private boolean thriftTiming;
-	private boolean jsonTiming;
 	
 	/**
 	 *  Constructor of the CollectorHandler class
@@ -51,7 +41,6 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	
 	/**
 	 * Implements the thrift-defined interface {@link thriftgen.Collector Collector}.
-	 * Forwards batches to Esper engine and to the web socket if {@link #isWebSocket()} is {@code true}.
 	 * @param batches	List of batches to submit
 	 */
 	public void submitBatches(List<Batch> batches) throws TException {
@@ -62,47 +51,12 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			//log.info("Batch to esper");
 			EsperHandler.sendBatch(batch);
 			
-			//WS JSON-LD
-			//log.info("Batch to JsonLD to WebSocket");
-			if (webSocket) {
-				try {
-					
-					if(jsonTiming)
-						JsonTracesWS.sendBatch(batchToJson(batch));
-					else
-						JsonTracesWS.sendBatch(JsonLDSerialize.batchToJson(batch));
-					
-				} catch (Exception e) {
-					log.error("Error while serializing batch to json" + e.getMessage());
-				}
-			}
-			
 //			//SERIALIZE BATCH to JSON
 //			BatchSerialize.numBatchToSerialize = 180;
 //			BatchSerialize.serialize(batch, numbBatches);
 					
 		}
 		
-	}
-	
-	/**
-	 * Serialize a {@link thriftgen.Batch Batch} object to a {@link org.json.simple.JSONObject JSONObject} through
-	 * the {@link websocket.JsonLDSerialize JsonLDSerialize} class.
-	 * @param batch Batch to be serialized
-	 * @return JSONObject representing the batch given as input
-	 * @throws Exception	If errors while processing the batch
-	 */
-	private JSONObject batchToJson(Batch batch) throws Exception {
-		
-		String[] timing = new String[3];
-		timing[1] = Long.toString(Instant.now().toEpochMilli());
-		JSONObject b = JsonLDSerialize.batchToJson(batch);
-		timing[2] = Long.toString(Instant.now().toEpochMilli());
-		timing[0] = Integer.toString(numbBatches.get());
-
-		jsonTimingCollector.addRecord(timing);
-		
-		return b;
 	}
 	
 	/**
@@ -165,23 +119,6 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	}
 
 	/**
-	 * Get method for the webSocket flag
-	 * @return the webSocket flag
-	 */
-	public boolean isWebSocket() {
-		return webSocket;
-	}
-
-	/**
-	 * Set method for the webSocket flag. If {@code true}
-	 * enables forwarding of batches to the web socket in JSON-LD.
-	 * @param webSocket the webSocket to set
-	 */
-	public void setWebSocket(boolean webSocket) {
-		this.webSocket = webSocket;
-	}
-
-	/**
 	 * Get method for the thriftTiming flag
 	 * @return the thriftTiming flag
 	 */
@@ -199,26 +136,5 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 			thriftTimingCollector = new RecordCollector("./thriftTiming.csv", 200);	
 		this.thriftTiming = thriftTiming;
 	}
-
-	/**
-	 * Get method for the jsonTiming flag
-	 * @return the jsonTiming flag
-	 */
-	public boolean isJsonTiming() {
-		return jsonTiming;
-	}
-
-	/**
-	 * Set method for the jsonTiming flag. If {@code true}
-	 * enables saving records of JSON-LD serialization timings
-	 * @param jsonTiming the jsonTiming to set
-	 */
-	public void setJsonTiming(boolean jsonTiming) {
-		if (jsonTiming)
-			jsonTimingCollector = new RecordCollector("./jsonTiming.csv", 200);	
-		this.jsonTiming = jsonTiming;
-	}
-	
-	
 
 }
