@@ -8,7 +8,6 @@ import thriftgen.Log;
 import thriftgen.Span;
 import thriftgen.SpanRef;
 import thriftgen.Tag;
-import websocket.JsonLDSerialize;
 
 /**
  * Class to convert {@link com.espertech.esper.client.EventBean EventBean} objects to a specific JSON representation.
@@ -30,7 +29,7 @@ public class EventToJsonConverter {
     	StringBuilder sb = new StringBuilder();
     	sb.append("{ ");
     	sb.append("\"traceID\" : ");
-    	sb.append("\"" + JsonLDSerialize.traceIdToHex(s.getTraceIdHigh(), s.getTraceIdLow()) + "\", ");
+    	sb.append("\"" + traceIdToHex(s.getTraceIdHigh(), s.getTraceIdLow()) + "\", ");
     	sb.append("\"serviceName\" : ");
     	sb.append("\"" + e.get("serviceName") + "\", ");
     	sb.append("\"hashProcess\" : ");
@@ -48,7 +47,7 @@ public class EventToJsonConverter {
 	    	for(int i = 0; i < spanrefs.size(); i ++) {
 	    		sb.append(" { ");
 	    		sb.append("\"traceID\" : ");
-	    		sb.append(" \"" + JsonLDSerialize.traceIdToHex(spanrefs.get(i).getTraceIdHigh(), spanrefs.get(i).getTraceIdLow()) + "\", ");
+	    		sb.append(" \"" + traceIdToHex(spanrefs.get(i).getTraceIdHigh(), spanrefs.get(i).getTraceIdLow()) + "\", ");
 	    		sb.append("\"spanID\" : ");
 	    		sb.append(" \"" + Long.toHexString(spanrefs.get(i).getSpanId()) + "\", ");
 	    		sb.append("\"refType\" : ");
@@ -114,5 +113,21 @@ public class EventToJsonConverter {
     	return sb.toString();
     	
     }
+	
+	/**
+	 * Convert {@link thriftgen.Span#traceIdHigh traceIdHigh} and {@link thriftgen.Span#traceIdLow traceIdLow}
+	 * to their HEX representation.
+	 * @param traceIdHigh
+	 * @param traceIdLow
+	 * @return String containing the HEX value 
+	 */
+	public static String traceIdToHex(Long traceIdHigh, Long traceIdLow) {
+		
+		if (traceIdHigh == 0)
+			return String.format("%x", traceIdLow);
+		else
+			return String.format("%x%016x", traceIdHigh, traceIdLow);
+		
+	}
 
 }

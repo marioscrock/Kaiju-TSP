@@ -15,8 +15,6 @@ import org.apache.thrift.TException;
 import com.google.gson.Gson;
 
 import thriftgen.Batch;
-//import websocket.JsonTracesWS;
-import websocket.JsonTracesWS;
 
 /**
  * Main class to launch a fake kaiju-collector instance. It emulates incoming batches 
@@ -35,11 +33,6 @@ public class FakeCollector {
 		
 		sentBatches = 0;
 		batches = new ArrayList<>();
-		
-		//Open WebSocket
-		JsonTracesWS ws = new JsonTracesWS();
-		Thread webSocketThread = new Thread(ws);
-    	webSocketThread.start();
     	
     	ch = new CollectorHandler();
     	
