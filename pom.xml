@@ -41,11 +41,10 @@
    </build>
   <dependencies>
     <dependency>
-      <groupId>org.apache.thrift</groupId>
-      <artifactId>libthrift</artifactId>
-      <version>0.11.0</version>
-      <scope>compile</scope>
-    </dependency>
+    	<groupId>org.apache.thrift</groupId>
+    	<artifactId>libthrift</artifactId>
+    	<version>0.12.0</version>
+	</dependency>
     <dependency>
       <groupId>com.uber.tchannel</groupId>
       <artifactId>tchannel-core</artifactId>
