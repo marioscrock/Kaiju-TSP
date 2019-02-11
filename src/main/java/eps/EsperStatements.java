@@ -55,7 +55,7 @@ public class EsperStatements {
 	public static void defineTracesWindow(EPAdministrator cepAdm, String retentionTime) {
 		cepAdm.createEPL("create window TracesWindow#unique(traceIdHex)#time(" + retentionTime + ") (traceIdHex string)");
 	    cepAdm.createEPL("insert into TracesWindow(traceIdHex)"
-	    		+ " select websocket.JsonLDSerialize.traceIdToHex(traceIdHigh, traceIdLow)"
+	    		+ " select eps.EventToJsonConverter.traceIdToHex(traceIdHigh, traceIdLow)"
 	    		+ " from Span");		
 	}
 
@@ -66,8 +66,8 @@ public class EsperStatements {
 	public static void defineProcessesTable(EPAdministrator cepAdm) {
 		cepAdm.createEPL("create table ProcessesTable (hashProcess int primary key, process thriftgen.Process, hostname string)");
 	    cepAdm.createEPL("on Batch b merge ProcessesTable p"
-	    		+ " where websocket.JsonLDSerialize.hashProcess(b.process) = p.hashProcess"
-	    		+ " when not matched then insert select websocket.JsonLDSerialize.hashProcess(process) as hashProcess, process,"
+	    		+ " where eps.EventToJsonConverter.hashProcess(b.process) = p.hashProcess"
+	    		+ " when not matched then insert select eps.EventToJsonConverter.hashProcess(process) as hashProcess, process,"
 	    		+ " process.tags.firstOf(t => t.key = 'hostname').getVStr() as hostname");	
 	}
 	
@@ -79,7 +79,7 @@ public class EsperStatements {
 	public static void defineSpansWindow(EPAdministrator cepAdm, String retentionTime) {
 		cepAdm.createEPL("create window SpansWindow#time(" + retentionTime + ") as (span thriftgen.Span, hashProcess int, serviceName string)");
 		cepAdm.createEPL("insert into SpansWindow"
-		    		+ " select s as span, websocket.JsonLDSerialize.hashProcess(p) as hashProcess, p.serviceName as serviceName"
+		    		+ " select s as span, eps.EventToJsonConverter.hashProcess(p) as hashProcess, p.serviceName as serviceName"
 		    		+ " from Batch[select process as p, * from spans as s]");	 
 		
 	}
@@ -93,9 +93,9 @@ public class EsperStatements {
 		cepAdm.createEPL("create window DependenciesWindow#time(" + retentionTime + ") (traceIdHexFrom string,"
 	    		+ " spanIdFrom long, traceIdHexTo string, spanIdTo long)");
 	    cepAdm.createEPL("insert into DependenciesWindow"
-	    		+ " select websocket.JsonLDSerialize.traceIdToHex(s.span.traceIdHigh, s.span.traceIdLow) as traceIdHexTo,"
+	    		+ " select eps.EventToJsonConverter.traceIdToHex(s.span.traceIdHigh, s.span.traceIdLow) as traceIdHexTo,"
 	    		+ " s.span.spanId as spanIdTo,"
-	    		+ " websocket.JsonLDSerialize.traceIdToHex(s.r.traceIdHigh, s.r.traceIdLow) as traceIdHexFrom,"
+	    		+ " eps.EventToJsonConverter.traceIdToHex(s.r.traceIdHigh, s.r.traceIdLow) as traceIdHexFrom,"
 	    		+ " s.r.spanId as spanIdFrom"
 	    		+ " from SpansWindow[select span.spanId, span.traceIdLow, span.traceIdHigh,* from span.references as r] s");	
 	}
@@ -276,7 +276,7 @@ public class EsperStatements {
 	public static void highLatencies(EPAdministrator cepAdm) {
 		 EPStatement highLatencies =cepAdm.createEPL(""
 		    		+ " insert into HighLatency3SigmaRule"
-		    		+ " select websocket.JsonLDSerialize.traceIdToHex(span.traceIdHigh, span.traceIdLow) as traceId,"
+		    		+ " select eps.EventToJsonConverter.traceIdToHex(span.traceIdHigh, span.traceIdLow) as traceId,"
 		    		+ " Long.toHexString(span.spanId) as spanId, serviceName, span.operationName as operationName,"
 		    		+ " span.startTime as startTime, span.duration as duration, p.hostname as hostname"
 		    		+ " from SpansWindow as s join ProcessesTable as p"
@@ -305,7 +305,7 @@ public class EsperStatements {
 	public static void tailSampling(EPAdministrator cepAdm, String filepath) {
 	    EPStatement tailSampling = cepAdm.createEPL("select rstream * from SpansWindow as s"
 	    		+ " where exists (select * from TracesToBeSampledWindow "
-	    		+ "where traceId = (websocket.JsonLDSerialize.traceIdToHex(s.span.traceIdHigh, s.span.traceIdLow)))");
+	    		+ "where traceId = (eps.EventToJsonConverter.traceIdToHex(s.span.traceIdHigh, s.span.traceIdLow)))");
 	    tailSampling.addListener(new CEPTailSamplingListener(filepath)); 		
 	}
 	
