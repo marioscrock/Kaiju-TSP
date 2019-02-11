@@ -19,7 +19,7 @@ import eventsocket.Metric;
 public class EsperHandler {
 	
 	public static String retentionTime = "2min";
-	public static String mode = "traces"; //traces, metrics, logs or high-level
+	public static String mode = "traces"; //traces (or traces-api), metrics, logs or high-level
 	
 	protected static EPRuntime cepRT;
 	protected static EPAdministrator cepAdm;
@@ -54,16 +54,19 @@ public class EsperHandler {
 		    /*
 		     * START API
 		     */
-		    Thread APIThread = new Thread(new Runnable() {
-				
-				@Override
-				public void run() {
-					KaijuAPI.initAPI();	
-				}
-				
-			});
+		    if (EsperHandler.mode.equals("traces-api")) {
+		    	
+			    Thread APIThread = new Thread(new Runnable() {
+					
+					@Override
+					public void run() {
+						KaijuAPI.initAPI();	
+					}
+					
+				});
 		    
-		    APIThread.run();
+		    	APIThread.run();
+			}
 		}
 	    
 	}
