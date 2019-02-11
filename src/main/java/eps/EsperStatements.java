@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -461,23 +463,29 @@ public class EsperStatements {
 		
 		try {
 			for (String s : replaced) {
+				
 				String[] s_array = s.split("=", 2);
+				String s_stmt = s_array[1];
+				log.info(s_stmt);
+				EPStatement stmt = cepAdm.createEPL(s_stmt);
 				
 				String[] prefix = s_array[0].split(",");
-				for(String key : prefix) {
-					//TODO
-					switch (key) {
-					case "value":	
+				
+				Map<String, String> config = new HashMap<>();			
+				for(String p : prefix) {
+					config.put(p.split(":")[0], p.split(":")[1]);
+				}	
+				log.info(config.toString());
+				if (config.get("listener") != null) {
+					switch (config.get("listener")) {
+					case "simple":
+						stmt.addListener(new CEPListener(config.get("message")));
 						break;
 					default:
 						break;
 					}
-				}	
-				
-				String s_stmt = s_array[1];
-				EPStatement stmt = cepAdm.createEPL(s_stmt);
-				stmt.addListener(new CEPListener(""));
-			}	
+				}			
+			}					
 		    		    
 		} catch (Exception e) {
 			log.error("Failed validating statements file: " + e.getMessage());
