@@ -129,5 +129,24 @@ public class EventToJsonConverter {
 			return String.format("%x%016x", traceIdHigh, traceIdLow);
 		
 	}
+	
+	//Provides an hash for each Process, same hash if same serviceName
+	//and same tags(despite of their order)
+	public static int hashProcess(thriftgen.Process process) {
+		
+		int result = 0;
+		//37 - must be prime
+		result = 37 * result + process.getServiceName().hashCode();
+		
+		int tagsHash = 0;
+		if (process.getTags() != null) {
+			for (Tag tag : process.getTags())
+				tagsHash += tag.hashCode();
+		}
+		result = 37 * result + tagsHash;
+		
+		return Math.abs(result); 
+		
+	}
 
 }
