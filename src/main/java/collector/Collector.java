@@ -12,7 +12,7 @@ import com.uber.tchannel.api.SubChannel;
 import com.uber.tchannel.api.TChannel;
 
 import eps.EsperHandler;
-import eventsocket.EventSocket;
+import eventsocket.EventSocketServer;
 
 /**
  * Main class to launch the kaiju-collector instance.
@@ -30,16 +30,14 @@ public class Collector {
 	public static void main(String[] args) throws InterruptedException {
 		
 		//Set mode Esper
-		if(args.length > 0) {
-			EsperHandler.mode = args[0];
-			log.info("Esper mode set: " + args[0]);
-		}
+		if(args.length > 0)
+			EsperHandler.MODE = args[0];
+		log.info("Esper mode set: " + EsperHandler.MODE);
 		
 		//Set retention time Esper
-		if(args.length > 1) {
-			EsperHandler.retentionTime = args[1];
-			log.info("Esper retention time set: " + args[1]);
-		}
+		if(args.length > 1)
+			EsperHandler.RETENTION_TIME = args[1];
+		log.info("Esper retention time set: " + EsperHandler.RETENTION_TIME);
 
     	//Executors to handle incoming requests
     	BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>();
@@ -49,7 +47,8 @@ public class Collector {
 		
 		ch = new CollectorHandler();	
 		
-		if (EsperHandler.mode.equals("traces")) {
+		if (EsperHandler.MODE.equals("traces")) {
+			
 			//Create TChannel to serve jaeger-agents
 			TChannel tchannel = new TChannel.Builder("kaiju-collector")
 					.setServerPort(2042)
@@ -68,18 +67,14 @@ public class Collector {
 	        
     	} else {
     		
-    		if (EsperHandler.mode.equals("metrics"))
-    			//Port for metrics
-    			EventSocket.port = 9876;
-    		else
-    			//Port for logs
-    			EventSocket.port = 24224;
-    			
+    		//TODO extend EventSocket for metrics and logs implementing different ports
+    		//and different parsing strategies
+    		
 			//Open Events Socket
-	    	EventSocket es = new EventSocket();
+	    	EventSocketServer es = new EventSocketServer();
 	    	Thread eventSocketThread = new Thread(es);
 	    	eventSocketThread.start();
-	    	log.info("Socket thread started");
+	    	
     	}
 		
 	}

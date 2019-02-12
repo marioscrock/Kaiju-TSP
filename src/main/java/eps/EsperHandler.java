@@ -18,8 +18,8 @@ import eventsocket.Metric;
  */
 public class EsperHandler {
 	
-	public static String retentionTime = "2min";
-	public static String mode = "traces"; //traces (or traces-api), metrics, logs or high-level
+	public static String RETENTION_TIME = "2min";
+	public static String MODE = "logs"; //traces (or traces-api), metrics, logs or high-level
 	
 	protected static EPRuntime cepRT;
 	protected static EPAdministrator cepAdm;
@@ -49,12 +49,12 @@ public class EsperHandler {
 		    cepAdm = cep.getEPAdministrator();
 		    
 		    // True if taken from file, false if default statements
-		    initializeStatements(cepAdm, true);
+		    initializeStatements(cepAdm, false);
 		    
 		    /*
 		     * START API
 		     */
-		    if (EsperHandler.mode.equals("traces-api")) {
+		    if (EsperHandler.MODE.equals("traces-api")) {
 		    	
 			    Thread APIThread = new Thread(new Runnable() {
 					
@@ -74,9 +74,9 @@ public class EsperHandler {
 	private static void initializeStatements(EPAdministrator cepAdm, boolean fromFile) {
 		
 		if (fromFile) {
-			EsperStatements.parseStatements(cepAdm, retentionTime);
+			EsperStatements.parseStatements(cepAdm, RETENTION_TIME);
 		} else {
-			EsperStatements.defaultStatements(cepAdm, retentionTime);
+			EsperStatements.defaultStatements(cepAdm, RETENTION_TIME);
 		}
 		
 	}
