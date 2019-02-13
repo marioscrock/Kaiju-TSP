@@ -38,7 +38,6 @@ public class EventSocketThread extends Thread {
                     socket.close();
                     return;
                 } else {
-                	log.info(line); //TODO Comment it out
                 	collector.Collector.executor.execute(new ParserJson(line));		
                 }
             } catch (IOException e) {

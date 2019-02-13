@@ -10,6 +10,7 @@ import com.espertech.esper.client.EPServiceProvider;
 import com.espertech.esper.client.EPServiceProviderManager;
 
 import eventsocket.Event;
+import eventsocket.FLog;
 import eventsocket.Metric;
 
 /**
@@ -76,7 +77,24 @@ public class EsperHandler {
 		if (fromFile) {
 			EsperStatements.parseStatements(cepAdm, RETENTION_TIME);
 		} else {
-			EsperStatements.defaultStatements(cepAdm, RETENTION_TIME);
+			switch (MODE) {
+			case "traces":
+			case "traces-api":
+				EsperStatements.defaultStatementsTraces(cepAdm, RETENTION_TIME);
+				break;
+			case "metrics":
+				EsperStatements.defaultStatementsMetrics(cepAdm, RETENTION_TIME);
+				break;
+			case "logs":
+				EsperStatements.defaultStatementsLogs(cepAdm, RETENTION_TIME);
+				break;
+			case "high-level":
+				EsperStatements.defaultStatementsHighLevel(cepAdm, RETENTION_TIME);
+				break;
+			default:
+				break;
+			}
+			
 		}
 		
 	}
@@ -95,9 +113,11 @@ public class EsperHandler {
 	    // SOCKET events
 	    // Metrics -> JSON influxDB
 	    // Events -> Custom definition
+	    // Flog -> Json format from Fluentd
 	    // We register metrics and events as objects the engine will have to handle
 	    cepConfig.addEventType("Metric", Metric.class.getName());
 	    cepConfig.addEventType("Event", Event.class.getName());
+	    cepConfig.addEventType("FLog", FLog.class.getName());
 		
 	}
 
@@ -119,8 +139,8 @@ public class EsperHandler {
 	}
 	
 	/**
-	 * Static method to send a {@link eventSocket.Metric Metric} event to the Esper engine.
-	 * @param metric The {@link eventSocket.Metric Metric} to be sent to the Esper engine.
+	 * Static method to send a {@link eventsocket.Metric Metric} event to the Esper engine.
+	 * @param metric The {@link eventsocket.Metric Metric} to be sent to the Esper engine.
 	 */
 	public static void sendMetric(Metric metric) {
 		
@@ -129,12 +149,22 @@ public class EsperHandler {
 	}
 	
 	/**
-	 * Static method to send a {@link eventSocket.Event Event} event to the Esper engine.
-	 * @param event The {@link eventSocket.Event Event} to be sent to the Esper engine.
+	 * Static method to send a {@link eventsocket.Event Event} event to the Esper engine.
+	 * @param event The {@link eventsocket.Event Event} to be sent to the Esper engine.
 	 */
 	public static void sendEvent(Event event) {
 
 		cepRT.sendEvent(event);
+		
+	}
+	
+	/**
+	 * Static method to send a {@link eventsocket.FLog FLog} event to the Esper engine.
+	 * @param event The {@link eventsocket.FLog FLog} to be sent to the Esper engine.
+	 */
+	public static void sendFLog(FLog flog) {
+
+		cepRT.sendEvent(flog);
 		
 	}
 

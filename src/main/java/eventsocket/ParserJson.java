@@ -8,6 +8,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.lang.Exception;
+import java.util.HashMap;
+
 import eps.EsperHandler;
 
 /**
@@ -66,8 +68,12 @@ public class ParserJson implements Runnable {
 					EsperHandler.sendEvent((Event) eventsParsed[i]);
 				return;
 			}
-				
 			
+			@SuppressWarnings("unchecked")
+			HashMap<String,String> logs = gson.fromJson(jObj, HashMap.class);
+			FLog l = new FLog(logs);
+			EsperHandler.sendFLog(l);
+					
 				
 		} catch (Exception e){
 			log.info("Error parsing json " + jsonToParse + " | LINE DISCARDED");

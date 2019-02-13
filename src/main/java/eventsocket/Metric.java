@@ -1,5 +1,6 @@
 package eventsocket;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,7 +10,9 @@ import java.util.Map;
  * @author Mario
  *
  */
-public class Metric {
+public class Metric implements Serializable {
+
+	private static final long serialVersionUID = -1795026022912504200L;
 	
 	public String name;
 	public Map<String, String> fields = new HashMap<String, String>();

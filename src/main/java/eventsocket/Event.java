@@ -1,5 +1,6 @@
 package eventsocket;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,11 +9,19 @@ import java.util.Map;
  * @author Mario
  *
  */
-public class Event {
+public class Event implements Serializable {
+
+	private static final long serialVersionUID = -2601014412189297417L;
 	
 	public Long timestamp;
 	public Map<String, String> payload = new HashMap<>();
 	public Map<String, String> context = new HashMap<>();
+	
+	public Event (Long timestamp, Map<String, String> payload, Map<String, String> context) {
+		this.timestamp = timestamp;
+		this.payload = payload;
+		this.context = context;
+	}
 	
 	/**
 	 * Get the event payload {@code Map<String, String>}.

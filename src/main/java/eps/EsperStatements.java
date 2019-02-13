@@ -364,22 +364,8 @@ public class EsperStatements {
 				  + "a=ProcessCPUHigherThan80 and b=HighLatency3SigmaRule(hostname = a.hostname) where timer:within(" + within + ")]"); 	
 		anomalyAfterCommit.addListener(new CEPListener("HighLatency3SigmaRule and ProcessCPUHigherThan80 same host: "));
 	}
-	
-	/**
-	 * Register a {@link eps.listener.CEPListener CEPListener} reporting all {@code Metric} event and {@code Event} event.
-	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
-	 */
-	public static void debugStatements(EPAdministrator cepAdm) {
-		//METRICS listener
-	    EPStatement cepMetrics = cepAdm.createEPL("select * from Metric"); 
-	    cepMetrics.addListener(new CEPListener("Metric: "));
-	    
-	    //EVENTS listener
-	    EPStatement cepEvents = cepAdm.createEPL("select * from Event"); 
-	    cepEvents.addListener(new CEPListener("Event: "));	
-	}
 
-	public static void defaultStatements(EPAdministrator cepAdm, String retentionTime) {
+	public static void defaultStatementsTraces(EPAdministrator cepAdm, String retentionTime) {
 		
 		/*
 	     * Additional EVENTS
@@ -441,11 +427,6 @@ public class EsperStatements {
 	     */
 	    EsperStatements.insertCommitEvents(cepAdm);   
 	    EsperStatements.systemEvents(cepAdm);
-	    
-	    /*
-	     * DEBUG socket
-	     */
-	    EsperStatements.debugStatements(cepAdm);
 		
 	}
 
@@ -491,6 +472,21 @@ public class EsperStatements {
 			log.error("Failed validating statements file: " + e.getMessage());
 		}
 		
+	}
+
+	public static void defaultStatementsMetrics(EPAdministrator cepAdm, String retentionTime) {
+	    EPStatement cepMetrics = cepAdm.createEPL("select * from Metric"); 
+	    cepMetrics.addListener(new CEPListener("Metric: "));	
+	}
+
+	public static void defaultStatementsLogs(EPAdministrator cepAdm, String retentionTime) {
+		EPStatement cepEvents = cepAdm.createEPL("select * from FLog"); 
+	    cepEvents.addListener(new CEPListener("FLog: "));
+	}
+
+	public static void defaultStatementsHighLevel(EPAdministrator cepAdm, String retentionTime) {
+	    EPStatement cepEvents = cepAdm.createEPL("select * from Event"); 
+	    cepEvents.addListener(new CEPListener("Event: "));	
 	}
 
 }
