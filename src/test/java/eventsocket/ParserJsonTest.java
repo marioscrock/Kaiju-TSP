@@ -1,5 +1,7 @@
 package eventsocket;
 
+import org.junit.Test;
+
 import com.google.gson.Gson;
 
 /**
@@ -9,6 +11,7 @@ import com.google.gson.Gson;
  */
 public class ParserJsonTest {
 	
+	@Test
 	public static void main(String[] args) throws InterruptedException {
 		
 		String s1 = "{\n" + 
@@ -91,9 +94,6 @@ public class ParserJsonTest {
 				"}";
 		
 		Gson gson = new Gson();
-		
-		System.out.println(s4);
-		
 		System.out.println(gson.fromJson(s1, Metric.class));
 		System.out.println(gson.fromJson(s2, Metric.class));
 		System.out.println(gson.fromJson(s3, Event.class));
