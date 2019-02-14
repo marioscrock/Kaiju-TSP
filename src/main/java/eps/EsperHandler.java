@@ -24,8 +24,6 @@ public class EsperHandler {
 	
 	protected static EPRuntime cepRT;
 	protected static EPAdministrator cepAdm;
-
-	
 	
 	/**
 	 * Static method to initialize the Esper Engine and the selected statements, the Kaiju API.

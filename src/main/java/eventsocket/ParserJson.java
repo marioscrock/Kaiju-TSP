@@ -6,9 +6,12 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.internal.LinkedTreeMap;
+import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
 import java.lang.Exception;
-import java.util.HashMap;
+import java.util.Map;
 
 import eps.EsperHandler;
 
@@ -69,8 +72,8 @@ public class ParserJson implements Runnable {
 				return;
 			}
 			
-			@SuppressWarnings("unchecked")
-			HashMap<String,String> logs = gson.fromJson(jObj, HashMap.class);
+			Type type = new TypeToken<Map<String, String>>(){}.getType();
+			LinkedTreeMap<String,String> logs = gson.fromJson(jObj, type);
 			FLog l = new FLog(logs);
 			EsperHandler.sendFLog(l);
 					
@@ -78,8 +81,7 @@ public class ParserJson implements Runnable {
 		} catch (Exception e){
 			log.info("Error parsing json " + jsonToParse + " | LINE DISCARDED");
 			log.info(e.getClass().getSimpleName());
-			log.info(e.getMessage());
-			
+			log.info(e.getMessage());			
 		}
 
 	}
