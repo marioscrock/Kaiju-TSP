@@ -23,6 +23,7 @@ import eventsocket.Event;
 public class CEPListenerHL implements UpdateListener {
 	
 	private final static Logger log = LoggerFactory.getLogger(CEPListenerHL.class);
+	private static String HL_ADDRESS = "kaiju-hl";
 	
 	/**
 	 * Update method logging incoming {@link com.espertech.esper.client.EventBean EventBean} objects {@code newData} together 
@@ -49,7 +50,10 @@ public class CEPListenerHL implements UpdateListener {
 					jsonInString = "{\"events\":" + jsonInString + "}";					
 				}
 				
-				Socket s = new Socket("kaiju-hl", 11794);
+				if (System.getenv("HL_ADDRESS") != null)
+					HL_ADDRESS = System.getenv("HL_ADDRESS");
+				
+				Socket s = new Socket(HL_ADDRESS, 11794);
 				try (OutputStreamWriter out = new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8)) {
 				    out.write(jsonInString);
 				}
