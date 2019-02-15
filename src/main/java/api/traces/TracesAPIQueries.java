@@ -1,9 +1,11 @@
-package eps;
+package api.traces;
 
 import com.espertech.esper.client.EPOnDemandPreparedQuery;
 import com.espertech.esper.client.EPOnDemandPreparedQueryParameterized;
 
-public class KaijuAPIQueries {
+import eps.EsperHandler;
+
+public class TracesAPIQueries {
 	
 	protected static EPOnDemandPreparedQuery preparedTraces;
 	protected static EPOnDemandPreparedQueryParameterized preparedSpansServiceName;

@@ -53,7 +53,7 @@ public class CEPListenerHL implements UpdateListener {
 				if (System.getenv("HL_ADDRESS") != null)
 					HL_ADDRESS = System.getenv("HL_ADDRESS");
 				
-				Socket s = new Socket(HL_ADDRESS, 11794);
+				Socket s = new Socket(HL_ADDRESS, 9876);
 				try (OutputStreamWriter out = new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8)) {
 				    out.write(jsonInString);
 				}

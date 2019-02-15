@@ -17,6 +17,7 @@ import com.espertech.esper.client.EPAdministrator;
 import com.espertech.esper.client.EPStatement;
 
 import eps.listener.CEPListener;
+import eps.listener.CEPListenerHL;
 import eps.listener.CEPListenerHighLatencies;
 import eps.listener.CEPTailSamplingListener;
 
@@ -413,7 +414,6 @@ public class EsperStatements {
 	    // Three-sigma rule to detect anomalies (info https://en.wikipedia.org/wiki/68–95–99.7_rule)
 	    EsperStatements.highLatencies(cepAdm);
 	    EsperStatements.reportHighLatencies(cepAdm, "./anomalies.csv");
-	    EsperStatements.insertProcessCPUHigherThan80(cepAdm);
 	    
 	    // TAIL SAMPLING
 	    EsperStatements.tailSampling(cepAdm, "./sampled.txt");   
@@ -440,6 +440,7 @@ public class EsperStatements {
 			       .collect(Collectors.toList());
 		} catch (IOException e) {
 			log.error("Error in reading statements from file: " + e.getMessage());
+			return;
 		}
 		
 		try {
@@ -447,7 +448,10 @@ public class EsperStatements {
 				
 				String[] s_array = s.split("=", 2);
 				String s_stmt = s_array[1];
+				
+				//Debug statements installed
 				log.info(s_stmt);
+				
 				EPStatement stmt = cepAdm.createEPL(s_stmt);
 				
 				String[] prefix = s_array[0].split(",");
@@ -456,7 +460,10 @@ public class EsperStatements {
 				for(String p : prefix) {
 					config.put(p.split(":")[0], p.split(":")[1]);
 				}	
+				
+				//Debug configs of statements
 				log.info(config.toString());
+				
 				if (config.get("listener") != null) {
 					switch (config.get("listener")) {
 					case "simple":
@@ -477,11 +484,24 @@ public class EsperStatements {
 	public static void defaultStatementsMetrics(EPAdministrator cepAdm, String retentionTime) {
 	    EPStatement cepMetrics = cepAdm.createEPL("select * from Metric"); 
 	    cepMetrics.addListener(new CEPListener("Metric: "));	
+	    
+	    EsperStatements.insertProcessCPUHigherThan80(cepAdm);
 	}
 
 	public static void defaultStatementsLogs(EPAdministrator cepAdm, String retentionTime) {
-		EPStatement cepEvents = cepAdm.createEPL("select * from FLog"); 
-	    cepEvents.addListener(new CEPListener("FLog: "));
+		
+//		DEBUG STATEMENT
+//		EPStatement cepFLogs = cepAdm.createEPL("select * from FLog"); 
+//	    cepFLogs.addListener(new CEPListener("FLog: "));
+	    
+	    cepAdm.createEPL("insert into Event"
+	    		+ " select java.time.Instant.now().toEpochMilli() as timestamp,"
+	    		+ " new {container_name=fields('container_name'), container_id=fields('container_id')} as context,"
+	    		+ " new {log=fields('log')} as payload"
+	    		+ " from FLog"); 
+	    
+	    EPStatement cepEvents = cepAdm.createEPL("select * from Event"); 
+	    cepEvents.addListener(new CEPListenerHL());
 	}
 
 	public static void defaultStatementsHighLevel(EPAdministrator cepAdm, String retentionTime) {

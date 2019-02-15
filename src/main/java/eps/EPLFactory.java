@@ -26,7 +26,7 @@ public class EPLFactory {
 	
 	private final static Logger log = LoggerFactory.getLogger(EPLFactory.class);
 
-    public static String toEPL(String into, List<String> c_fields, List<String> p_fields) {
+    private static String toEPLInsertInto(String into, List<String> c_fields, List<String> p_fields) {
     	
         EPStatementObjectModel stmt = new EPStatementObjectModel();
         InsertIntoClause insertIntoClause = InsertIntoClause.create(into);
@@ -60,7 +60,7 @@ public class EPLFactory {
         return stmt.toEPL();
     }
 
-    public static String toEPLSchema(String name, Map<String, String> fields, List<String> inherits) {
+    private static String toEPLSchema(String name, Map<String, String> fields, List<String> inherits) {
         CreateSchemaClause schema = new CreateSchemaClause();
         schema.setSchemaName(name);
         
@@ -81,10 +81,10 @@ public class EPLFactory {
     }
 
 
-    public static void toEPL(EPAdministrator cepAdm, String filepath) {
+    public static void parseHLEvents(EPAdministrator cepAdm, String filepath) {
     	
     	//All events created inherit from HLEvent
-    	//cepAdm.createEPL("create schema HLEvent as (timestamp long)");
+    	cepAdm.createEPL("create schema HLEvent as (timestamp long)");
     	
     	List<String> listEvents = parseFile(filepath);	
     	if (listEvents != null) 
@@ -130,16 +130,14 @@ public class EPLFactory {
 			
 			//CREATE
 			try {
-				//cepAdm.createEPL();
-				toEPLSchema(e_name, fields, inherits);
+				cepAdm.createEPL(toEPLSchema(e_name, fields, inherits));
 			} catch (Exception eEPL) {
 				log.error("Error parsing EPL stmt: " + eEPL.getClass().getSimpleName() + " " + eEPL.getMessage());
 			}
 			
 			//INSERT INTO
 			try {
-				//cepAdm.createEPL();
-				toEPL(e_name, c_fields, p_fields);
+				cepAdm.createEPL(toEPLInsertInto(e_name, c_fields, p_fields));
 			} catch (Exception eEPL) {
 				log.error("Error parsing EPL stmt: " + eEPL.getClass().getSimpleName() + " " + eEPL.getMessage());
 			}

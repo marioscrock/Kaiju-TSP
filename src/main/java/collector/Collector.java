@@ -8,11 +8,11 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.uber.tchannel.api.SubChannel;
-import com.uber.tchannel.api.TChannel;
-
 import eps.EsperHandler;
-import eventsocket.EventSocketServer;
+import mode.HLMode;
+import mode.LogsMode;
+import mode.MetricsMode;
+import mode.TracesMode;
 
 /**
  * Main class to launch the kaiju-collector instance.
@@ -25,14 +25,33 @@ public class Collector {
 	private final static Logger log = LoggerFactory.getLogger(Collector.class);
 	
 	public static ThreadPoolExecutor executor;	
-	private static CollectorHandler ch;
 
 	public static void main(String[] args) throws InterruptedException {
 		
-		//Set mode Esper
-		if(args.length > 0)
-			EsperHandler.MODE = args[0];
-		log.info("Esper mode set: " + EsperHandler.MODE);
+		//SET MODE Esper		
+		if(args.length < 1) {
+			log.error("Specify mode to instantiate the Kaiju instance");
+			return;
+		}
+		
+		switch (args[0]) {
+		case "metrics":
+			EsperHandler.MODE = new MetricsMode();
+			break;
+		case "logs":
+			EsperHandler.MODE = new LogsMode();
+			break;
+		case "traces-api":
+			EsperHandler.MODE = new TracesMode(true);
+			break;
+		case "high-level":
+			EsperHandler.MODE = new HLMode();
+			break;
+		default:
+			EsperHandler.MODE = new TracesMode(false); //Default
+			break;
+		}
+		log.info("Esper mode set: " + EsperHandler.MODE.toString());
 		
 		//Set retention time Esper
 		if(args.length > 1)
@@ -45,37 +64,7 @@ public class Collector {
     			10000, TimeUnit.MILLISECONDS, workQueue);
     	log.info("Executors pool initialised");
 		
-		ch = new CollectorHandler();	
-		
-		if (EsperHandler.MODE.equals("traces")) {
-			
-			//Create TChannel to serve jaeger-agents
-			TChannel tchannel = new TChannel.Builder("kaiju-collector")
-					.setServerPort(2042)
-					.build();
-			
-			ch.setThriftTiming(true);
-			
-			//Register Handler for submitBatch interface defined in thrift file
-			SubChannel subCh = tchannel.makeSubChannel("kaiju-collector");
-			subCh.register("Collector::submitBatches", ch);
-			log.info("Handler registered for Collector::submitBatches");
-			
-			// listen for incoming connections
-			tchannel.listen().channel().closeFuture().sync(); //tchannel.listen()
-	        tchannel.shutdown();
-	        
-    	} else {
-    		
-    		//TODO extend EventSocket for metrics and logs implementing different ports
-    		//and different parsing strategies
-    		
-			//Open Events Socket
-	    	EventSocketServer es = new EventSocketServer();
-	    	Thread eventSocketThread = new Thread(es);
-	    	eventSocketThread.start();
-	    	
-    	}
+    	EsperHandler.MODE.init();
 		
 	}
 

@@ -1,9 +1,11 @@
-package eps;
+package api.traces;
 
 import com.espertech.esper.client.EPOnDemandQueryResult;
 import com.espertech.esper.client.EPStatement;
 import com.espertech.esper.client.EventBean;
 
+import eps.EsperHandler;
+import eps.EventToJsonConverter;
 import eps.listener.CEPListener;
 import spark.Request;
 import spark.Response;
@@ -13,7 +15,7 @@ import spark.Response;
  * @author Mario
  *
  */
-public class KaijuAPIHandler {
+public class TracesAPIHandler {
 	
 	/**
 	 * Static method to handle {@code POST /api/query?query=<query>}.
@@ -90,7 +92,7 @@ public class KaijuAPIHandler {
 		
 		EPOnDemandQueryResult result = null;
 		
-		result = KaijuAPIQueries.preparedTraces.execute();
+		result = TracesAPIQueries.preparedTraces.execute();
 	
 		response.type("application/json");
 		if (result != null) 
@@ -125,8 +127,8 @@ public class KaijuAPIHandler {
         EPOnDemandQueryResult result = null;
         
         synchronized (response) {
-        	KaijuAPIQueries.preparedSpansTraceId.setObject(1, traceId);
-        	result = EsperHandler.cepRT.executeQuery(KaijuAPIQueries.preparedSpansTraceId);
+        	TracesAPIQueries.preparedSpansTraceId.setObject(1, traceId);
+        	result = EsperHandler.cepRT.executeQuery(TracesAPIQueries.preparedSpansTraceId);
         }
         
 
@@ -165,8 +167,8 @@ public class KaijuAPIHandler {
         EPOnDemandQueryResult result = null;
         
         synchronized (response) {
-        	KaijuAPIQueries.preparedSpansServiceName.setObject(1, serviceName);     	
-        	result = EsperHandler.cepRT.executeQuery(KaijuAPIQueries.preparedSpansServiceName);
+        	TracesAPIQueries.preparedSpansServiceName.setObject(1, serviceName);     	
+        	result = EsperHandler.cepRT.executeQuery(TracesAPIQueries.preparedSpansServiceName);
         }
         
 
@@ -202,9 +204,9 @@ public class KaijuAPIHandler {
 		String key = request.params(":key");
 		EPOnDemandQueryResult result = null;
 
-		KaijuAPIQueries.preparedLogs.setObject(1, key);
+		TracesAPIQueries.preparedLogs.setObject(1, key);
         	
-    	result = EsperHandler.cepRT.executeQuery(KaijuAPIQueries.preparedLogs);
+    	result = EsperHandler.cepRT.executeQuery(TracesAPIQueries.preparedLogs);
 		
 		StringBuilder sb = new StringBuilder();
 		for (EventBean e : result.getArray())
@@ -227,9 +229,9 @@ public class KaijuAPIHandler {
 		String traceId = request.params(":traceId");
 		EPOnDemandQueryResult result = null;
 
-		KaijuAPIQueries.preparedDependencies.setObject(1, traceId);
+		TracesAPIQueries.preparedDependencies.setObject(1, traceId);
         	
-    	result = EsperHandler.cepRT.executeQuery(KaijuAPIQueries.preparedDependencies);
+    	result = EsperHandler.cepRT.executeQuery(TracesAPIQueries.preparedDependencies);
 		
     	response.type("application/json");
 		if (result != null) 

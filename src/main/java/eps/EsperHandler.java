@@ -1,7 +1,6 @@
 package eps;
 
 import thriftgen.*;
-import thriftgen.Process;
 
 import com.espertech.esper.client.Configuration;
 import com.espertech.esper.client.EPAdministrator;
@@ -12,6 +11,7 @@ import com.espertech.esper.client.EPServiceProviderManager;
 import eventsocket.Event;
 import eventsocket.FLog;
 import eventsocket.Metric;
+import mode.Mode;
 
 /**
  * Class to manage the Esper Engine.
@@ -20,13 +20,12 @@ import eventsocket.Metric;
 public class EsperHandler {
 	
 	public static String RETENTION_TIME = "2min";
-	public static String MODE = "logs"; //traces (or traces-api), metrics, logs or high-level
-	
-	protected static EPRuntime cepRT;
-	protected static EPAdministrator cepAdm;
+	public static Mode MODE;	
+	public static EPRuntime cepRT;
+	public static EPAdministrator cepAdm;
 	
 	/**
-	 * Static method to initialize the Esper Engine and the selected statements, the Kaiju API.
+	 * Static method to initialize the Esper Engine and the selected statements.
 	 */
 	public static void initializeHandler() {
 		
@@ -36,10 +35,8 @@ public class EsperHandler {
 			//The Configuration is meant only as an initialization-time object.
 		    Configuration cepConfig = new Configuration();
 		    
-		    /*
-		     * Basic EVENTS
-		     */
-		    addEventTypes(cepConfig);
+		    // Basic Events
+		    MODE.addEventTypes(cepConfig);
 		 
 		    // We setup the engine
 		    EPServiceProvider cep = EPServiceProviderManager.getProvider("myCEPEngine", cepConfig);
@@ -47,76 +44,10 @@ public class EsperHandler {
 		    cepRT = cep.getEPRuntime();
 		    cepAdm = cep.getEPAdministrator();
 		    
-		    // True if taken from file, false if default statements
-		    initializeStatements(cepAdm, false);
-		    
-		    /*
-		     * START API
-		     */
-		    if (EsperHandler.MODE.equals("traces-api")) {
-		    	
-			    Thread APIThread = new Thread(new Runnable() {
-					
-					@Override
-					public void run() {
-						KaijuAPI.initAPI();	
-					}
-					
-				});
-		    
-		    	APIThread.run();
-			}
+		    MODE.addStatements(cepAdm, false);
+		   
 		}
 	    
-	}
-	
-	private static void initializeStatements(EPAdministrator cepAdm, boolean fromFile) {
-		
-		if (fromFile) {
-			EsperStatements.parseStatements(cepAdm, RETENTION_TIME);
-		} else {
-			switch (MODE) {
-			case "traces":
-			case "traces-api":
-				EsperStatements.defaultStatementsTraces(cepAdm, RETENTION_TIME);
-				break;
-			case "metrics":
-				EsperStatements.defaultStatementsMetrics(cepAdm, RETENTION_TIME);
-				break;
-			case "logs":
-				EsperStatements.defaultStatementsLogs(cepAdm, RETENTION_TIME);
-				break;
-			case "high-level":
-				EsperStatements.defaultStatementsHighLevel(cepAdm, RETENTION_TIME);
-				break;
-			default:
-				break;
-			}
-			
-		}
-		
-	}
-
-	private static void addEventTypes(Configuration cepConfig) {
-		
-	    // We register thriftgen classes as objects the engine will have to handle
-		// JAEGER model
-	    cepConfig.addEventType("Batch", Batch.class.getName());
-	    cepConfig.addEventType("Span", Span.class.getName());
-	    cepConfig.addEventType("Process", Process.class.getName());
-	    cepConfig.addEventType("Log", Log.class.getName());
-	    cepConfig.addEventType("Tag", Tag.class.getName());
-	    cepConfig.addEventType("SpanRef", SpanRef.class.getName());
-	   
-	    // SOCKET events
-	    // Metrics -> JSON influxDB
-	    // Events -> Custom definition
-	    // Flog -> Json format from Fluentd
-	    // We register metrics and events as objects the engine will have to handle
-	    cepConfig.addEventType("Metric", Metric.class.getName());
-	    cepConfig.addEventType("Event", Event.class.getName());
-	    cepConfig.addEventType("FLog", FLog.class.getName());
-		
 	}
 
 	/**

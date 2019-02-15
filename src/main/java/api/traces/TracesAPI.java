@@ -1,4 +1,4 @@
-package eps;
+package api.traces;
 
 import spark.Service;
 
@@ -7,7 +7,7 @@ import spark.Service;
  * @author Mario
  *
  */
-public class KaijuAPI {
+public class TracesAPI {
 	
 	/**
 	 * Static method to initialize the API on port {@code 9278}. <ul>
@@ -28,7 +28,7 @@ public class KaijuAPI {
 	 */
     public static void initAPI() {
     	
-    	KaijuAPIQueries.initPreparedQueries();
+    	TracesAPIQueries.initPreparedQueries();
     	
     	Service http = Service.ignite()
     			.port(9278);
@@ -43,28 +43,28 @@ public class KaijuAPI {
 		});
 		
 		// POST /api/query?query=<query>
-    	http.post("/api/query", (request, response) -> KaijuAPIHandler.fireQuery(request, response));
+    	http.post("/api/query", (request, response) -> TracesAPIHandler.fireQuery(request, response));
     	
 		// POST /api/statement?statement=<statement>&msg=<msg>
-    	http.post("/api/statement", (request, response) -> KaijuAPIHandler.registerStatement(request, response));
+    	http.post("/api/statement", (request, response) -> TracesAPIHandler.registerStatement(request, response));
     	
     	// POST /api/remove?statement=<stmt_code>
-    	http.post("/api/remove", (request, response) -> KaijuAPIHandler.removeStatement(request, response));
+    	http.post("/api/remove", (request, response) -> TracesAPIHandler.removeStatement(request, response));
     	
     	// GET /api/traces/all
-    	http.get("/api/traces/all", (request, response) -> KaijuAPIHandler.getAllTracesIds(request, response));
+    	http.get("/api/traces/all", (request, response) -> TracesAPIHandler.getAllTracesIds(request, response));
     	
     	// GET /api/traces?service=<service>
-        http.get("/api/traces", (request, response) -> KaijuAPIHandler.getTracesByServiceName(request, response));
+        http.get("/api/traces", (request, response) -> TracesAPIHandler.getTracesByServiceName(request, response));
         
         // GET /api/traces/:id
-        http.get("/api/traces/:id", (request, response) -> KaijuAPIHandler.getTraceByTraceId(request, response));
+        http.get("/api/traces/:id", (request, response) -> TracesAPIHandler.getTraceByTraceId(request, response));
         
         // GET /api/logs/:key
-        http.get("/api/logs/:key", (request, response) -> KaijuAPIHandler.getLogsByKey(request, response));
+        http.get("/api/logs/:key", (request, response) -> TracesAPIHandler.getLogsByKey(request, response));
         
         // GET /api/dependencies/:traceId
-        http.get("/api/dependencies/:traceId", (request, response) -> KaijuAPIHandler.getDependenciesByTraceId(request, response));
+        http.get("/api/dependencies/:traceId", (request, response) -> TracesAPIHandler.getDependenciesByTraceId(request, response));
 
     }
 
