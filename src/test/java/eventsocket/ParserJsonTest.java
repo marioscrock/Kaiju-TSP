@@ -1,5 +1,7 @@
 package eventsocket;
 
+import static org.junit.Assert.assertNotNull;
+
 import org.junit.Test;
 
 import com.google.gson.Gson;
@@ -12,7 +14,7 @@ import com.google.gson.Gson;
 public class ParserJsonTest {
 	
 	@Test
-	public static void main(String[] args) throws InterruptedException {
+	public void parserTest() throws InterruptedException {
 		
 		String s1 = "{\n" + 
 				"    \"fields\": {\n" + 
@@ -94,10 +96,10 @@ public class ParserJsonTest {
 				"}";
 		
 		Gson gson = new Gson();
-		System.out.println(gson.fromJson(s1, Metric.class));
-		System.out.println(gson.fromJson(s2, Metric.class));
-		System.out.println(gson.fromJson(s3, Event.class));
-		System.out.println(gson.fromJson(s4, Event.class));
+		assertNotNull(gson.fromJson(s1, Metric.class));
+		assertNotNull(gson.fromJson(s2, Metric.class));
+		assertNotNull(gson.fromJson(s3, Event.class));
+		assertNotNull(gson.fromJson(s4, Event.class));
 
 	}
 

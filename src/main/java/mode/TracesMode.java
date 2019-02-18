@@ -35,6 +35,7 @@ public class TracesMode implements Mode {
 	@Override
 	public void init() throws InterruptedException {
 		
+		EsperHandler.initializeHandler();
 		ch = new CollectorHandler();
 		
 		//Create TChannel to serve jaeger-agents
@@ -68,11 +69,12 @@ public class TracesMode implements Mode {
 	}
 
 	@Override
-	public void addStatements(EPAdministrator cepAdm, boolean parse) {
-		
+	public void addStatements(EPAdministrator cepAdm, boolean parse) {		
 		EsperStatements.defaultStatementsTraces(cepAdm, EsperHandler.RETENTION_TIME);
 		if (parse)
 			StatementParser.parseStatements(cepAdm, EsperHandler.RETENTION_TIME);
+		
+		EsperStatements.reportHLEvents(cepAdm);
 		
 		if (api) {		
 			Thread APIThread = new Thread(new Runnable() {

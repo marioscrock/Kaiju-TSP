@@ -36,7 +36,6 @@ public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatch
 	 */
 	public CollectorHandler() {	
 		numbBatches = new AtomicInteger(0);
-		EsperHandler.initializeHandler();
 	}
 	
 	/**

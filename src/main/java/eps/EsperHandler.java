@@ -44,7 +44,7 @@ public class EsperHandler {
 		    cepRT = cep.getEPRuntime();
 		    cepAdm = cep.getEPAdministrator();
 		    
-		    MODE.addStatements(cepAdm, false);
+		    MODE.addStatements(cepAdm, true);
 		   
 		}
 	    

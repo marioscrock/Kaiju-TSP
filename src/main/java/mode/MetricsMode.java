@@ -18,11 +18,12 @@ public class MetricsMode implements Mode {
 	}
 	
 	@Override
-	public void addStatements(EPAdministrator cepAdm, boolean parse) {	
-		
+	public void addStatements(EPAdministrator cepAdm, boolean parse) {			
 		EsperStatements.defaultStatementsMetrics(cepAdm, EsperHandler.RETENTION_TIME);
 		if (parse)
 			StatementParser.parseStatements(cepAdm, EsperHandler.RETENTION_TIME);
+		
+		EsperStatements.reportHLEvents(cepAdm);
 	}
 	
 	@Override
