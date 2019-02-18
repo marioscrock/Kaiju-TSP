@@ -37,7 +37,7 @@ public class CEPListener implements UpdateListener {
 			for (EventBean e : newData)
 				sb.append(e.getUnderlying() + "\n");
 		
-			log.info("Event " + name + " " + sb.toString());
+			log.info(name + " " + sb.toString());
 		}
 		
 	}
