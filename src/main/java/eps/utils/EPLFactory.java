@@ -1,4 +1,4 @@
-package eps;
+package eps.utils;
 
 import com.espertech.esper.client.EPAdministrator;
 import com.espertech.esper.client.soda.*;
@@ -56,7 +56,14 @@ public class EPLFactory {
         fromClause.add(stream);
         stmt.setFromClause(fromClause);
         
-        System.out.println(stmt.toEPL());
+        Conjunction where = Expressions.and();
+        for(String f : p_fields) {
+    		String b = "payload.containsKey('" + f + "')";
+    		where.add(b);
+    	}
+        stmt.setWhereClause(where);
+        
+        log.info(stmt.toEPL());
         return stmt.toEPL();
     }
 
