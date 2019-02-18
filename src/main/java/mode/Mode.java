@@ -14,8 +14,8 @@ public interface Mode {
     	eventSocketThread.start();
 	}
 	
-	public void addStatements(EPAdministrator cepAdm, boolean useDefault);
-	
 	public void addEventTypes(Configuration cepConfig);
+	
+	public void addStatements(EPAdministrator cepAdm, boolean parse);	
 
 }

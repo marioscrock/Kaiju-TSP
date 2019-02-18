@@ -12,6 +12,7 @@ import api.traces.TracesAPI;
 import collector.CollectorHandler;
 import eps.EsperHandler;
 import eps.EsperStatements;
+import eps.utils.StatementParser;
 import eventsocket.Event;
 import thriftgen.Batch;
 import thriftgen.Log;
@@ -53,25 +54,7 @@ public class TracesMode implements Mode {
         tchannel.shutdown();
 
 	}
-
-	@Override
-	public void addStatements(EPAdministrator cepAdm, boolean useDefault) {
-		if (useDefault)
-			EsperStatements.parseStatements(cepAdm, EsperHandler.RETENTION_TIME);
-		else 
-			EsperStatements.defaultStatementsTraces(cepAdm, EsperHandler.RETENTION_TIME);	
-		
-		if (api) {		
-			Thread APIThread = new Thread(new Runnable() {
-				@Override
-				public void run() {
-					TracesAPI.initAPI();	
-				}			
-			});
-	        APIThread.run();
-		}
-	}
-		
+	
 	@Override
 	public void addEventTypes(Configuration cepConfig) {
 	    cepConfig.addEventType("Batch", Batch.class.getName());
@@ -82,6 +65,24 @@ public class TracesMode implements Mode {
 	    cepConfig.addEventType("SpanRef", SpanRef.class.getName());
 	   
 	    cepConfig.addEventType("Event", Event.class.getName());	
+	}
+
+	@Override
+	public void addStatements(EPAdministrator cepAdm, boolean parse) {
+		
+		EsperStatements.defaultStatementsTraces(cepAdm, EsperHandler.RETENTION_TIME);
+		if (parse)
+			StatementParser.parseStatements(cepAdm, EsperHandler.RETENTION_TIME);
+		
+		if (api) {		
+			Thread APIThread = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					TracesAPI.initAPI();	
+				}			
+			});
+	        APIThread.run();
+		}
 	}
 	
 	@Override
