@@ -21,7 +21,7 @@ public class LogsMode implements Mode {
 	public void addStatements(EPAdministrator cepAdm, boolean parse) {
 		EsperStatements.defaultStatementsLogs(cepAdm, EsperHandler.RETENTION_TIME);
 		if (parse)
-			StatementParser.parseStatements(cepAdm, EsperHandler.RETENTION_TIME);
+			StatementParser.parseStatements(cepAdm, "./stmts/statements.txt", EsperHandler.RETENTION_TIME);
 		
 		EsperStatements.reportHLEvents(cepAdm);
 	}

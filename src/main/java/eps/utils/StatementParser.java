@@ -22,11 +22,11 @@ public class StatementParser {
 	
 	private final static Logger log = LoggerFactory.getLogger(StatementParser.class);
 	
-	public static void parseStatements(EPAdministrator cepAdm, String retentionTime) {
+	public static void parseStatements(EPAdministrator cepAdm, String filepath, String retentionTime) {
 		
 		List<String> replaced = new ArrayList<String>();
 		
-		try (Stream<String> lines = Files.lines(Paths.get("./stmts/statements.txt"))) {
+		try (Stream<String> lines = Files.lines(Paths.get(filepath))) {
 			   replaced = lines
 			       .map(line -> line.replaceAll(":retentionTime:", retentionTime))
 			       .collect(Collectors.toList());
