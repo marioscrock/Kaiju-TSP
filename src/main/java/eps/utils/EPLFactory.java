@@ -26,7 +26,7 @@ public class EPLFactory {
 	
 	private final static Logger log = LoggerFactory.getLogger(EPLFactory.class);
 
-    private static String toEPLInsertInto(String into, List<String> c_fields, List<String> p_fields) {
+    private static String toEPLInsertInto(String into, List<String> p_fields, List<String> c_fields) {
     	
         EPStatementObjectModel stmt = new EPStatementObjectModel();
         InsertIntoClause insertIntoClause = InsertIntoClause.create(into);
@@ -42,8 +42,7 @@ public class EPLFactory {
     		String b = "payload('" + f + "')";
     		selectClause.addWithAsProvidedName(b, f);
     	}
-        
-        
+              
         //CONTEXT
     	for(String f : c_fields) {
     		String b = "context('" + f + "')";
@@ -56,12 +55,14 @@ public class EPLFactory {
         fromClause.add(stream);
         stmt.setFromClause(fromClause);
         
-        Conjunction where = Expressions.and();
-        for(String f : p_fields) {
-    		String b = "payload.containsKey('" + f + "')";
-    		where.add(b);
-    	}
-        stmt.setWhereClause(where);
+        if (!p_fields.isEmpty()) {
+        	Conjunction where = Expressions.and();
+	        for(String f : p_fields) {
+	    		String b = "payload.containsKey('" + f + "')";
+	    		where.add(b);
+	    	}
+	        stmt.setWhereClause(where);
+        }
         
         log.info(stmt.toEPL());
         return stmt.toEPL();
@@ -143,10 +144,12 @@ public class EPLFactory {
 			}
 			
 			//INSERT INTO
-			try {
-				cepAdm.createEPL(toEPLInsertInto(e_name, c_fields, p_fields));
-			} catch (Exception eEPL) {
-				log.error("Error parsing EPL stmt: " + eEPL.getClass().getSimpleName() + " " + eEPL.getMessage());
+			if (!p_fields.isEmpty()) {
+				try {
+					cepAdm.createEPL(toEPLInsertInto(e_name, p_fields, c_fields));
+				} catch (Exception eEPL) {
+					log.error("Error parsing EPL stmt: " + eEPL.getClass().getSimpleName() + " " + eEPL.getMessage());
+				}
 			}
 			
 		} catch (Exception eVal) {
