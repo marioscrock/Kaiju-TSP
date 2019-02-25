@@ -3,6 +3,7 @@ package eventsocket;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,7 +25,8 @@ public class FLog implements Serializable {
 	public Map<String, String> fields = new HashMap<String, String>();	
 	
 	public FLog(Map<String, String> fields) {
-		this.fields.putAll(fields);
+		
+		this.fields.putAll(fields);		
 		
 		Gson gson = new Gson();
 		JsonParser parser = new JsonParser();
@@ -34,11 +36,12 @@ public class FLog implements Serializable {
 				
 				JsonObject jObj = (JsonObject) parser.parse(fields.get(k));
 				@SuppressWarnings("unchecked")
-				HashMap<String,String> otherFields = gson.fromJson(jObj, HashMap.class);
-				this.fields.putAll(otherFields);
+				HashMap<String,Object> otherFields = gson.fromJson(jObj, HashMap.class);
 				
+				for (Entry<String, Object> f : otherFields.entrySet())
+					fields.put(f.getKey(), f.getValue().toString());			
 			}
-		}
+		}	
 		
 	}
 	
