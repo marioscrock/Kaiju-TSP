@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.internal.LinkedTreeMap;
@@ -72,8 +73,9 @@ public class ParserJson implements Runnable {
 				return;
 			}
 			
-			Type type = new TypeToken<Map<String, String>>(){}.getType();
-			LinkedTreeMap<String,String> logs = gson.fromJson(jObj, type);
+			Type type = new TypeToken<Map<String, JsonElement>>(){}.getType();
+			LinkedTreeMap<String,JsonElement> logs = gson.fromJson(jObj, type);
+			
 			FLog l = new FLog(logs);
 			EsperHandler.sendFLog(l);
 					
