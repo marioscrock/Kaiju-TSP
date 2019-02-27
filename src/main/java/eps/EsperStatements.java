@@ -88,20 +88,20 @@ public class EsperStatements {
 	 * {@code (serviceName string primary key, operationName string primary key, meanDuration double, m2 double, counter long)}.
 	 * It resets the counter of each row when the value exceeds {@code resetValueInt}.
 	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
-	 * @param resetValueInt The maximum value for the counter. If higher, reset the counter.
+	 * @param resetValue The maximum value for the counter. If higher, reset the counter.
 	 */
-	public static void defineMeanDurationPerOperationTableResetCounter(EPAdministrator cepAdm, String resetValueInt) {
+	public static void defineMeanDurationPerOperationTableResetCounter(EPAdministrator cepAdm, String resetValue) {
 	    
 		cepAdm.createEPL("create table MeanDurationPerOperation (serviceName string primary key, operationName string primary key,"
 	    		+ " meanDuration double, m2 double, counter long)");
 	    cepAdm.createEPL("on SpansWindow s"
 	    		+ " merge MeanDurationPerOperation m"
 	    		+ " where s.serviceName = m.serviceName and s.span.operationName = m.operationName"
-	    		+ " when matched and counter <= " + resetValueInt
+	    		+ " when matched and counter <= " + resetValue
 	    		+ " then update set counter = (initial.counter + 1), "
 	    		+ " meanDuration = (initial.meanDuration + ((span.duration - initial.meanDuration)/counter)),"
 	    		+ " m2 = (initial.m2 + (span.duration - meanDuration)*(span.duration - initial.meanDuration))"
-	       		+ " when matched and counter > " + resetValueInt
+	       		+ " when matched and counter > " + resetValue
 	    		+ " then update set counter = 1,"
 	    		+ " meanDuration = s.span.duration,"
 	    		+ " m2 = 0"
@@ -149,28 +149,7 @@ public class EsperStatements {
 		//Event for traces sampling
 		cepAdm.createEPL("create schema TraceAnomaly(traceId string)");
 		
-	    /*
-	     * TABLES and NAMED WINDOWS
-	     */
-	    // TRACES WINDOW (traceId PK)
-	    EsperStatements.defineTracesWindow(cepAdm, retentionTime);
-	    // PROCESSES TABLE (hashProcess PK, process)
-	    EsperStatements.defineProcessesTable(cepAdm);
-	    // SPANS WINDOW (span, hashProcess, serviceName)
-	    EsperStatements.defineSpansWindow(cepAdm, retentionTime);
-	    // DEPENDENCIES WINDOW (traceIdHexFrom, spanIdFrom, traceIdHexTo, spanIdTo)
-	    EsperStatements.defineDependenciesWindow(cepAdm, retentionTime);
-	    
-	    // MEAN DURATION PER OPERATION TABLE (serviceName PK, operationName PK, meanDuration, m2, counter)
-	    //Welford's Online algorithm to compute running mean and variance
-	    EsperStatements.defineMeanDurationPerOperationTable(cepAdm);
-	    //EsperStatements.defineMeanDurationPerOperationTableResetCounter(cepAdm, 1000);
-	    
-	    //TRACES TO BE SAMPLED WINDOW (traceId)
-	    EsperStatements.defineTracesToBeSampledWindow(cepAdm, retentionTime);
-	    
-	    // TAIL SAMPLING
-	    EsperStatements.tailSampling(cepAdm, "./sampled.txt");   
+		EsperStatements.reportHLEvents(cepAdm);
 		
 	}
 
@@ -179,6 +158,8 @@ public class EsperStatements {
 //		DEBUG STATEMENT
 //	    EPStatement cepMetrics = cepAdm.createEPL("select * from Metric"); 
 //	    cepMetrics.addListener(new CEPListener("Metric: "));	
+		
+		EsperStatements.reportHLEvents(cepAdm);
 	    
 	}
 
@@ -187,13 +168,10 @@ public class EsperStatements {
 //		DEBUG STATEMENT
 //		EPStatement cepFLogs = cepAdm.createEPL("select * from FLog"); 
 //	    cepFLogs.addListener(new CEPListener("FLog: "));
+		
+		EsperStatements.reportHLEvents(cepAdm);
 	 
 	}
 
-	public static void defaultStatementsHighLevel(EPAdministrator cepAdm, String retentionTime) {
-	    
-//	    PATTERN
-	    
-	}
 
 }

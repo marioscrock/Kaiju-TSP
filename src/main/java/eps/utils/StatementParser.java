@@ -17,6 +17,7 @@ import com.espertech.esper.client.EPAdministrator;
 import com.espertech.esper.client.EPStatement;
 
 import eps.listener.CEPListener;
+import eps.listener.CEPTailSamplingListener;
 
 public class StatementParser {
 	
@@ -38,33 +39,35 @@ public class StatementParser {
 		try {
 			for (String s : replaced) {
 				
-				String[] s_array = s.split("=", 2);
-				String s_stmt = s_array[1];
+				if (!s.startsWith("#")) {				
+					String[] s_array = s.split("=", 2);
+					String s_stmt = s_array[1];
 				
-				//Debug statements installed
-				log.info(s_stmt);
-				
-				EPStatement stmt = cepAdm.createEPL(s_stmt);
-				
-				String[] prefix = s_array[0].split(",");
-				
-				Map<String, String> config = new HashMap<>();			
-				for(String p : prefix) {
-					config.put(p.split(":")[0], p.split(":")[1]);
-				}	
-				
-				//Debug config of statements
-				log.info(config.toString());
-				
-				if (config.get("listener") != null) {
-					switch (config.get("listener")) {
-					case "simple":
-						stmt.addListener(new CEPListener(config.get("message")));
-						break;
-					default:
-						break;
-					}
-				}			
+					EPStatement stmt = cepAdm.createEPL(s_stmt);
+					
+					String[] prefix = s_array[0].split(",");
+					
+					Map<String, String> config = new HashMap<>();			
+					for(String p : prefix) {
+						config.put(p.split(":")[0], p.split(":")[1]);
+					}	
+					
+					//Log statements parsed
+					log.info("Config:" + config.toString() + "\nStatement name: " + stmt.getName() + "\nStatement: " + s_stmt);
+					
+					if (config.get("listener") != null) {
+						switch (config.get("listener")) {
+						case "simple":
+							stmt.addListener(new CEPListener(config.get("name")));
+							break;
+						case "sample":
+							stmt.addListener(new CEPTailSamplingListener(config.get("path")));
+							break;
+						default:
+							break;
+						}
+					}	
+				}
 			}					
 		    		    
 		} catch (Exception e) {

@@ -74,8 +74,6 @@ public class TracesMode implements Mode {
 		if (parse)
 			StatementParser.parseStatements(cepAdm, "./stmts/statements.txt", EsperHandler.RETENTION_TIME);
 		
-		EsperStatements.reportHLEvents(cepAdm);
-		
 		if (api) {		
 			Thread APIThread = new Thread(new Runnable() {
 				@Override
