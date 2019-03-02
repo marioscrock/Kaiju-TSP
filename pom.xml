@@ -81,5 +81,10 @@
     	<artifactId>esper</artifactId>
     	<version>7.1.0</version>
 	</dependency>
+	<dependency>
+		<groupId>com.github.wnameless</groupId>
+		<artifactId>json-flattener</artifactId>
+		<version>0.6.0</version>
+	</dependency>
   </dependencies>
 </project>

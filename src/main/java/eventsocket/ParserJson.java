@@ -3,14 +3,10 @@ package eventsocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.wnameless.json.flattener.JsonFlattener;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.internal.LinkedTreeMap;
-import com.google.gson.reflect.TypeToken;
-
-import java.lang.reflect.Type;
 import java.lang.Exception;
 import java.util.Map;
 
@@ -73,10 +69,9 @@ public class ParserJson implements Runnable {
 				return;
 			}
 			
-			Type type = new TypeToken<Map<String, JsonElement>>(){}.getType();
-			LinkedTreeMap<String,JsonElement> logs = gson.fromJson(jObj, type);
+			Map<String, Object> flattenJson = JsonFlattener.flattenAsMap(jsonToParse);
 			
-			FLog l = new FLog(logs);
+			FLog l = new FLog(flattenJson);
 			EsperHandler.sendFLog(l);
 					
 				

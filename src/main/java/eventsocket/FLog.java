@@ -3,10 +3,6 @@ package eventsocket;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 
 /**
  * Class representing a structured log.
@@ -16,22 +12,18 @@ import com.google.gson.JsonElement;
 public class FLog implements Serializable {
 
 	private static final long serialVersionUID = 709484586326437353L;
-	public Map<String, String> fields = new HashMap<String, String>();	
 	
-	public FLog(Map<String, JsonElement> fields) {
+	public Map<String, Object> fields = new HashMap<String, Object>();	
 	
-		Gson gson = new Gson();
-		
-		for (Entry<String,JsonElement> e : fields.entrySet()) 	
-			this.fields.put(e.getKey(), gson.toJson(e.getValue()));
-		
+	public FLog(Map<String, Object> fields) {
+		this.fields = fields;	
 	}
 	
-	public Map<String, String> getFields() {
+	public Map<String, Object> getFields() {
 		return fields;
 	}
 	
-	public void setFields(Map<String, String> fields) {
+	public void setFields(Map<String, Object> fields) {
 		this.fields = fields;
 	}
 	
