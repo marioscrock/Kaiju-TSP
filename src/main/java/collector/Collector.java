@@ -60,7 +60,7 @@ public class Collector {
 
     	//Executors to handle incoming requests
     	BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>();
-    	executor = new ThreadPoolExecutor(5, 5,
+    	executor = new ThreadPoolExecutor(3, 5,
     			10000, TimeUnit.MILLISECONDS, workQueue);
     	log.info("Executors pool initialised");
 		

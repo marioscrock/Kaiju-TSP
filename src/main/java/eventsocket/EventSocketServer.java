@@ -3,6 +3,8 @@ package eventsocket;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +19,7 @@ public class EventSocketServer implements Runnable {
 	
 	public static int PORT = 9876;
 	private final static Logger log = LoggerFactory.getLogger(EventSocketServer.class);
+	private ExecutorService pool;
 	
 	/**
 	 * Run implementation for the EventSocket class.
@@ -26,6 +29,7 @@ public class EventSocketServer implements Runnable {
 		
 		ServerSocket serverSocket = null;
         Socket socket = null;
+        pool = Executors.newCachedThreadPool();
 
         try {
             serverSocket = new ServerSocket(PORT);
@@ -39,7 +43,7 @@ public class EventSocketServer implements Runnable {
 	            } 
 	            // new thread for a client
 	            log.info("New socket client accepted on port " + PORT);
-	            new EventSocketThread(socket).start();
+	            pool.submit(new EventSocketThread(socket));
 	        }
         } catch (IOException e) {
 			log.info("Exception " + e.getClass().getSimpleName() + ": " + e.getMessage());
