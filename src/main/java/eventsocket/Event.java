@@ -10,48 +10,48 @@ import java.util.Map;
  *
  */
 public class Event implements Serializable {
-
+	
 	private static final long serialVersionUID = -2601014412189297417L;
 	
 	public Long timestamp;
-	public Map<String, String> payload = new HashMap<>();
-	public Map<String, String> context = new HashMap<>();
+	public Map<String, Object> payload = new HashMap<>();
+	public Map<String, Object> context = new HashMap<>();
 	
-	public Event (Long timestamp, Map<String, String> payload, Map<String, String> context) {
+	public Event (Long timestamp, Map<String, Object> payload, Map<String, Object> context) {
 		this.timestamp = timestamp;
 		this.payload = payload;
 		this.context = context;
 	}
 	
 	/**
-	 * Get the event payload {@code Map<String, String>}.
-	 * @return The event payload {@code Map<String, String>}.
+	 * Get the event payload {@code Map<String, Object>}.
+	 * @return The event payload {@code Map<String, Object>}.
 	 */
-	public Map<String, String> getPayload() {
+	public Map<String, Object> getPayload() {
 		return payload;
 	}
 	
 	/**
-	 * Set the event payload {@code Map<String, String>}
-	 * @param event The event payload {@code Map<String, String>}
+	 * Set the event payload {@code Map<String, Object>}
+	 * @param event The event payload {@code Map<String, Object>}
 	 */
-	public void setPayload(Map<String, String> payload) {
+	public void setPayload(Map<String, Object> payload) {
 		this.payload = payload;
 	}
 	
 	/**
-	 * Get the event context {@code Map<String, String>}.
-	 * @return The event context {@code Map<String, String>}.
+	 * Get the event context {@code Map<String, Object>}.
+	 * @return The event context {@code Map<String, Object>}.
 	 */
-	public Map<String, String> getContext() {
+	public Map<String, Object> getContext() {
 		return context;
 	}
 	
 	/**
-	 * Set the event context {@code Map<String, String>}
-	 * @param event The event context {@code Map<String, String>}
+	 * Set the event context {@code Map<String, Object>}
+	 * @param event The event context {@code Map<String, Object>}
 	 */
-	public void setContext(Map<String, String> context) {
+	public void setContext(Map<String, Object> context) {
 		this.context = context;
 	}
 	
