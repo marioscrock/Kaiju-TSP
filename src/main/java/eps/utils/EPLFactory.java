@@ -26,7 +26,7 @@ public class EPLFactory {
 	
 	private final static Logger log = LoggerFactory.getLogger(EPLFactory.class);
 
-    private static String toEPLInsertInto(String into, List<String> p_fields, List<String> c_fields) {
+    private static String toEPLInsertInto(String into, Map<String, String> p_fields, Map<String, String> c_fields) {
     	
         EPStatementObjectModel stmt = new EPStatementObjectModel();
         InsertIntoClause insertIntoClause = InsertIntoClause.create(into);
@@ -38,15 +38,17 @@ public class EPLFactory {
         selectClause.addWithAsProvidedName("timestamp", "timestamp");
         
         //PAYLOAD
-    	for(String f : p_fields) {
-    		String b = "payload('" + f + "')";
-    		selectClause.addWithAsProvidedName(b, f);
+    	for(String pk : p_fields.keySet()) {
+    		PropertyValueExpression p = new PropertyValueExpression("payload('" + pk + "')");
+    		CastExpression ce = new CastExpression(p, p_fields.get(pk));
+    		selectClause.add(ce, pk);
     	}
               
         //CONTEXT
-    	for(String f : c_fields) {
-    		String b = "context('" + f + "')";
-    		selectClause.addWithAsProvidedName(b, f);
+    	for(String ck : c_fields.keySet()) {
+    		PropertyValueExpression p = new PropertyValueExpression("context('" + ck + "')");
+    		CastExpression ce = new CastExpression(p, c_fields.get(ck));
+    		selectClause.add(ce, ck);
     	}
         
         stmt.setSelectClause(selectClause);
@@ -57,7 +59,7 @@ public class EPLFactory {
         
         if (!p_fields.isEmpty()) {
         	Conjunction where = Expressions.and();
-	        for(String f : p_fields) {
+	        for(String f : p_fields.keySet()) {
 	    		String b = "payload.containsKey('" + f + "')";
 	    		where.add(b);
 	    	}
@@ -104,9 +106,8 @@ public class EPLFactory {
 	private static void createSchemaAndInsertInto(String e, EPAdministrator cepAdm) {
 		
 		String e_name = "";
-		List<String> p_fields = new ArrayList<>();
-		List<String> c_fields = new ArrayList<>();
-		Map<String, String> fields = new HashMap<>();
+		Map<String, String> p_fields = new HashMap<>();
+		Map<String, String> c_fields = new HashMap<>();
 		List<String> inherits = new ArrayList<>();
 		inherits.add("HLEvent");
 		
@@ -118,8 +119,7 @@ public class EPLFactory {
 				String[] e_fields_types = e_array[1].substring(1, e_array[1].length()-1).split(",");
 				for (String ft : e_fields_types) {			
 					//name:type
-					p_fields.add(ft.split(":")[0]);
-					fields.put(ft.split(":")[0], ft.split(":")[1]);
+					p_fields.put(ft.split(":")[0], ft.split(":")[1]);
 				}
 			}
 			
@@ -127,14 +127,16 @@ public class EPLFactory {
 				String[] e_fields_types = e_array[2].substring(1, e_array[2].length()-1).split(",");
 				for (String ft : e_fields_types) {			
 					//name:type
-					c_fields.add(ft.split(":")[0]);
-					fields.put(ft.split(":")[0], ft.split(":")[1]);
+					c_fields.put(ft.split(":")[0], ft.split(":")[1]);
 				}
 			}
 			
 			if (e_array.length > 3 && !e_array[3].equals("") ) {
 				inherits.addAll(Arrays.asList(e_array[3].substring(1, e_array[3].length()-1).split(",")));
 			}
+			
+			Map<String, String> fields = new HashMap<String, String>(p_fields);
+			fields.putAll(c_fields);
 			
 			//CREATE
 			try {
