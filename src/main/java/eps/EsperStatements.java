@@ -141,7 +141,7 @@ public class EsperStatements {
 	
 	public static void reportHLEvents(EPAdministrator cepAdm) {
 		EPStatement hlEvent = cepAdm.createEPL("select * from Event");
-		hlEvent.addListener(new CEPListenerHL());
+		hlEvent.addListener(new CEPListenerHL("kaiju-hl"));
 	}
 
 	public static void defaultStatementsTraces(EPAdministrator cepAdm, String retentionTime) {

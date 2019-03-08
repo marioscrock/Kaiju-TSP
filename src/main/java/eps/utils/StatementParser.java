@@ -17,6 +17,7 @@ import com.espertech.esper.client.EPAdministrator;
 import com.espertech.esper.client.EPStatement;
 
 import eps.listener.CEPListener;
+import eps.listener.CEPListenerHL;
 import eps.listener.CEPTailSamplingListener;
 
 public class StatementParser {
@@ -63,6 +64,8 @@ public class StatementParser {
 						case "sample":
 							stmt.addListener(new CEPTailSamplingListener(config.get("path")));
 							break;
+						case "hl":
+							stmt.addListener(new CEPListenerHL(config.get("address")));
 						default:
 							break;
 						}

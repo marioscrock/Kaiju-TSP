@@ -16,19 +16,18 @@ import com.google.gson.Gson;
 import eventsocket.Event;
 
 /**
- * Simple UpdateListener implementation logging incoming {@link com.espertech.esper.client.EventBean EventBean} objects together 
- * with a {@code String} message.
+ * Simple UpdateListener implementation forwarding incoming {@link com.espertech.esper.client.EventBean EventBean}.
  * @author Mario
  */
 public class CEPListenerHL implements UpdateListener {
 	
 	private final static Logger log = LoggerFactory.getLogger(CEPListenerHL.class);
-	private static String HL_ADDRESS = "kaiju-hl";
+	private static String HL_ADDRESS;
 	
-	/**
-	 * Update method logging incoming {@link com.espertech.esper.client.EventBean EventBean} objects {@code newData} together 
-	 * with a {@code String} message associated to the {@link CEPListenerHL CEPListener} instance.
-	 */
+	public CEPListenerHL(String s) {
+		HL_ADDRESS = s;
+	}
+	
 	@Override
 	public void update(EventBean[] newData, EventBean[] oldData) {
 		
