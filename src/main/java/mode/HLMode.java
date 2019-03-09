@@ -8,6 +8,10 @@ import eps.utils.EPLFactory;
 import eps.utils.StatementParser;
 import eventsocket.Event;
 
+/**
+ * Class implementing Mode interface for High-Level mode.
+ *
+ */
 public class HLMode implements Mode {
 	
 	@Override

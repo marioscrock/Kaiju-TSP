@@ -9,6 +9,11 @@ import java.net.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Single thread to handle a socket connection, parse received {@link eventSocket.Metric Metric}, {@link eventSocket.Flog FLog} and
+ * {@link eventSocket.Event Event} event in JSON format and send them to the Esper engine.
+ *
+ */
 public class EventSocketThread extends Thread {
 
     protected Socket socket;

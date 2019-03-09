@@ -9,6 +9,10 @@ import eps.utils.StatementParser;
 import eventsocket.Event;
 import eventsocket.FLog;
 
+/**
+ * Class implementing Mode interface for Logs mode.
+ *
+ */
 public class LogsMode implements Mode {
 	
 	@Override

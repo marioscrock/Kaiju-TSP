@@ -6,6 +6,10 @@ import com.espertech.esper.client.EPAdministrator;
 import eps.EsperHandler;
 import eventsocket.EventSocketServer;
 
+/**
+ * Mode interface.
+ *
+ */
 public interface Mode {
 	
 	default public void init() throws InterruptedException {	

@@ -9,7 +9,6 @@ import collector.RecordCollector;
 
 /**
  * UpdateListener implementation saving incoming HighLatency3SigmaRule events as records to a given filepath.
- * @author Mario
  */
 public class CEPListenerHighLatencies implements UpdateListener {
 	

@@ -20,6 +20,11 @@ import eps.listener.CEPListener;
 import eps.listener.CEPListenerHL;
 import eps.listener.CEPTailSamplingListener;
 
+/**
+ * Parse statements from file.
+ * Syntax: key-config:value-config[,key-config:value-config]*=statement
+ * One statement for line, the # at the beginning comments out the line.
+ */
 public class StatementParser {
 	
 	private final static Logger log = LoggerFactory.getLogger(StatementParser.class);

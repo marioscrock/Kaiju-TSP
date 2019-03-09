@@ -8,7 +8,6 @@ import collector.RecordCollector;
 /**
  * Simple UpdateListener implementation saving to file the incoming {@link com.espertech.esper.client.EventBean EventBean} objects together 
  * with a {@code String} message.
- * @author Mario
  */
 public class CEPListenerRecord implements UpdateListener {
 	

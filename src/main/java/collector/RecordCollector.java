@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 /**
  * Utils class to save records to files. Files are saved each time the buffer is full.
  * Records are saved as {@code .csv} file, one record on each line with comma as separator char.
- * @author Mario
  */
 public class RecordCollector {
 	

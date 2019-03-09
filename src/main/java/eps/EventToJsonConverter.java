@@ -11,7 +11,6 @@ import thriftgen.Tag;
 
 /**
  * Class to convert {@link com.espertech.esper.client.EventBean EventBean} objects to a specific JSON representation.
- * @author Mario
  *
  */
 public class EventToJsonConverter {

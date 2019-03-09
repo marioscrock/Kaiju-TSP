@@ -21,12 +21,16 @@ import thriftgen.Span;
 import thriftgen.SpanRef;
 import thriftgen.Tag;
 
+/**
+ * Class implementing Mode interface for Traces mode.
+ *
+ */
 public class TracesMode implements Mode {
 	
 	private final static Logger log = LoggerFactory.getLogger(TracesMode.class);
 	
 	private boolean api;
-	private CollectorHandler ch;
+	protected CollectorHandler ch;
 	
 	public TracesMode(boolean api) {
 		this.api = api;

@@ -20,7 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Created by Riccardo and Mario.
+ * Parse {@code Event}s from file installing {@code create schema} and {@code insert into} statements accordingly.
+ * Syntax: event-name>{payload-key:type[,payload-key:type]*}>{context-key:type[,context-key:type]*}>{inherits-event-name[,inherits-event-name]*}
  */
 public class EPLFactory {
 	

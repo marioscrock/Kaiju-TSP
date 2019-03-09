@@ -16,12 +16,9 @@ import thriftgen.Collector;
 
 /**
  * Class to handle incoming batches. It forwards batches to the {@link eps.EsperHandler EsperHandler} and: <ul>
- * <li> {@link #setWebSocket(boolean)} to {@code true} to enable forwarding of batches to the web socket in JSON-LD
- * <li> {@link #setJsonTiming(boolean)} to {@code true} to enable saving records of JSON-LD serialization timings
  * <li> {@link #setThriftTiming(boolean)} to {@code true} to enable saving records of Thrift de-serialization timings
  * </ul>
  * All default values are {@code false}.
- * @author Mario
  *
  */
 public class CollectorHandler extends ThriftRequestHandler<Collector.submitBatches_args, Collector.submitBatches_result> {

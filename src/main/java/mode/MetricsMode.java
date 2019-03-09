@@ -9,6 +9,10 @@ import eps.utils.StatementParser;
 import eventsocket.Event;
 import eventsocket.Metric;
 
+/**
+ * Class implementing Mode interface for Metrics mode.
+ *
+ */
 public class MetricsMode implements Mode {
 	
 	@Override

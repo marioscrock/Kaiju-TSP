@@ -9,7 +9,6 @@ import com.espertech.esper.client.UpdateListener;
 /**
  * Simple UpdateListener implementation logging incoming {@link com.espertech.esper.client.EventBean EventBean} objects together 
  * with a {@code String} message.
- * @author Mario
  */
 public class CEPListener implements UpdateListener {
 	

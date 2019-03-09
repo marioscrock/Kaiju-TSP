@@ -12,8 +12,6 @@ import spark.Response;
 
 /**
  * Class to handle KaijuAPI requests.
- * @author Mario
- *
  */
 public class TracesAPIHandler {
 	

@@ -10,9 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Runnable class exposing a socket on port {@code 9876} accepting {@link eventSocket.Metric Metric} and
+ * Runnable class exposing a socket-server on port {@code 9876} accepting {@link eventSocket.Metric Metric}, {@link eventSocket.Flog FLog} and
  * {@link eventSocket.Event Event} event in JSON format from multiple clients to be sent the Esper engine.
- * @author Mario
  *
  */
 public class EventSocketServer implements Runnable {

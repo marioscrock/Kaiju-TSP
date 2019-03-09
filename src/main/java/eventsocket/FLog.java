@@ -6,7 +6,6 @@ import java.util.Map;
 
 /**
  * Class representing a structured log.
- * @author Mario
  *
  */
 public class FLog implements Serializable {

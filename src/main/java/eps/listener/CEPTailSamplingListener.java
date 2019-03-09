@@ -11,8 +11,6 @@ import eps.EventToJsonConverter;
 
 /**
  * UpdateListener implementation saving incoming {@link thriftgen.Span Span} events to a given filepath.
- * @author Mario
- *
  */
 public class CEPTailSamplingListener implements UpdateListener {
 	

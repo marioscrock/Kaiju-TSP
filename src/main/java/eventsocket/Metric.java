@@ -7,7 +7,6 @@ import java.util.Map;
 /**
  * Class representing a metric following the InfluxDB specification.
  * @see <a href="https://docs.influxdata.com/telegraf/v1.8/data_formats/output/json/>
- * @author Mario
  *
  */
 public class Metric implements Serializable {

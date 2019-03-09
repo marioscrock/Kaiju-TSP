@@ -15,7 +15,6 @@ import mode.Mode;
 
 /**
  * Class to manage the Esper Engine.
- * @author Mario
  */
 public class EsperHandler {
 	

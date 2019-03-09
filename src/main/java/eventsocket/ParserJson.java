@@ -13,7 +13,7 @@ import java.util.Map;
 import eps.EsperHandler;
 
 /**
- * Runnable class parsing {@link eventSocket.Metric Metric} and
+ * Runnable class parsing {@link eventSocket.Metric Metric}, {@link eventSocket.Flog FLog} and
  * {@link eventSocket.Event Event} events from JSON format to Java objects.
  */
 public class ParserJson implements Runnable {

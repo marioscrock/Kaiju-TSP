@@ -15,10 +15,10 @@ import mode.MetricsMode;
 import mode.TracesMode;
 
 /**
- * Main class to launch the kaiju-collector instance.
+ * Main class to launch the Kaiju instance.
  * args[0] sets the mode for Kaiju: traces (or traces-api), logs, metrics or high-level (default is "traces").
- * args[1] sets the retention time for Esper windows (default is 2 min).
- * @author Mario
+ * args[1] sets the retention time for Esper windows (default is 2 min). Can be specified in parsed statements
+ * with the :retentionTime: placeholder.
  */
 public class Collector {
 	

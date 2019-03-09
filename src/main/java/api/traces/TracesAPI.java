@@ -4,7 +4,6 @@ import spark.Service;
 
 /**
  * Class to manage the KaijuAPI.
- * @author Mario
  *
  */
 public class TracesAPI {

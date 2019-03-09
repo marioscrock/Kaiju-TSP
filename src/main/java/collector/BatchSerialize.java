@@ -20,7 +20,6 @@ import thriftgen.Batch;
  * <li> {@code int minNumBatchToSerialize}	default value is 0
  * <li> {@code filepath String}	default value is {@code "./dumpTraces.json"}
  * </ul>
- * @author Mario
  */
 public class BatchSerialize {
 	

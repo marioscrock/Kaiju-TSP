@@ -6,7 +6,6 @@ import java.util.Map;
 
 /**
  * Class representing a generic event.
- * @author Mario
  *
  */
 public class Event implements Serializable {

@@ -139,11 +139,20 @@ public class EsperStatements {
 	    tailSampling.addListener(new CEPTailSamplingListener(filepath)); 		
 	}
 	
+	/**
+	 * Default method attaching forwarding listener to {@link eventsocket.Event Event}.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 */
 	public static void reportHLEvents(EPAdministrator cepAdm) {
 		EPStatement hlEvent = cepAdm.createEPL("select * from Event");
 		hlEvent.addListener(new CEPListenerHL("kaiju-hl"));
 	}
 
+	/**
+	 * Default statements for Traces mode.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param retentionTime Retention time of Esper.
+	 */
 	public static void defaultStatementsTraces(EPAdministrator cepAdm, String retentionTime) {
 		
 		//Event for traces sampling
@@ -153,6 +162,11 @@ public class EsperStatements {
 		
 	}
 
+	/**
+	 * Default statements for Metrics mode.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param retentionTime Retention time of Esper.
+	 */
 	public static void defaultStatementsMetrics(EPAdministrator cepAdm, String retentionTime) {
 		
 //		DEBUG STATEMENT
@@ -163,6 +177,11 @@ public class EsperStatements {
 	    
 	}
 
+	/**
+	 * Default statements for Logs mode.
+	 * @param cepAdm {@link com.espertech.esper.client.EPAdministrator EPAdministrator} of the Esper engine.
+	 * @param retentionTime Retention time of Esper.
+	 */
 	public static void defaultStatementsLogs(EPAdministrator cepAdm, String retentionTime) {
 		
 //		DEBUG STATEMENT

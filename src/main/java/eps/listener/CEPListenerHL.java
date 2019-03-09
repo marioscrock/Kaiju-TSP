@@ -16,8 +16,8 @@ import com.google.gson.Gson;
 import eventsocket.Event;
 
 /**
- * Simple UpdateListener implementation forwarding incoming {@link com.espertech.esper.client.EventBean EventBean}.
- * @author Mario
+ * Simple UpdateListener implementation forwarding incoming {@link com.espertech.esper.client.EventBean EventBean}
+ * to the specificied {@code kaiju-hl} instance.
  */
 public class CEPListenerHL implements UpdateListener {
 	
