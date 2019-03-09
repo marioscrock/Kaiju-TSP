@@ -14,27 +14,36 @@ import org.apache.thrift.TException;
 
 import com.google.gson.Gson;
 
+import eps.EsperHandler;
+import mode.TracesMode;
 import thriftgen.Batch;
 
 /**
  * Main class to launch a fake kaiju-collector instance. It emulates incoming batches 
  * reading them from a JSON file.
- * @author Mario
  */
-public class FakeCollector {
+public class FakeCollector extends TracesMode {
 	
 	private final static String FILEPATH = "/dumpTraces.json";
 	private static int sentBatches;
 	private static List<Batch> batches;
-	private static CollectorHandler ch;
 	
-
-	public static void main(String[] args) throws InterruptedException {
+	public FakeCollector(boolean api) {
+		super(api);
+	}
+	
+	public void main(String[] args) throws InterruptedException {
+		FakeCollector fc = new FakeCollector(false);
+		fc.exec();
+	}
+	
+	//It schedules at fixed rate incoming batches reading them from a JSON file.
+	public void exec() throws InterruptedException {
+		
+		EsperHandler.MODE = this;
 		
 		sentBatches = 0;
 		batches = new ArrayList<>();
-    	
-    	ch = new CollectorHandler();
     	
 		//Read batches from file
 		Gson gson = new Gson();
@@ -42,9 +51,11 @@ public class FakeCollector {
 		Batch[] batchesArray = gson.fromJson(new BufferedReader(new InputStreamReader(in)), Batch[].class);
 		batches = Arrays.asList(batchesArray);
 		
+		EsperHandler.MODE.init();
+		
 		//Schedule batches
 		final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-	    executorService.scheduleAtFixedRate(FakeCollector::sendBatch, 0, 500, TimeUnit.MILLISECONDS);
+	    executorService.scheduleAtFixedRate(this::sendBatch, 0, 500, TimeUnit.MILLISECONDS);
 	  
 		return;
 
@@ -53,7 +64,7 @@ public class FakeCollector {
 	/**
 	 * Send a batch to the handler. Unit of work for the executor.
 	 */
-	private static void sendBatch() {
+	private void sendBatch() {
 	    
 		if (sentBatches < batches.size()) {
 			List<Batch> batchesToSend = new ArrayList<Batch>();
