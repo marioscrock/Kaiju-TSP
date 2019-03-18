@@ -22,4 +22,4 @@ API exposed on port `9278`.
 - `GET /api/logs/:key` Return a tuple `(spanId, operationName, logs)` for all logs with a field with the given `key` currently retained by the Esper Engine.
 - `GET /api/dependencies/:traceId` Return a set of tuples `(serviceFrom, serviceTo, numInteractions)` representing interactions between services in a given trace.
 
-All requests return {@code status 400} and an error message if Kaiju reports an error while managing the request.
+All requests return `status 400` and an error message if Kaiju reports an error while managing the request.
