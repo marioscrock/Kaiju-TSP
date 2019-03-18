@@ -1,8 +1,10 @@
 # Kaiju-TSP
 
-A one-component TSP (Traces Stream Processor) for [Jaeger](https://github.com/jaegertracing/jaeger) end-to-end tracing system (`v1.5`). The detailed description can be found in the thesis elaborate [Towards observability with (RDF) trace stream processing](https://www.politesi.polimi.it/handle/10589/144741).
+A one-component TSP (Traces Stream Processor) based on [Esper](http://www.espertech.com/esper/) for [Jaeger](https://github.com/jaegertracing/jaeger) end-to-end tracing system (`v1.5`). The detailed description can be found in the thesis elaborate [Towards observability with (RDF) trace stream processing](https://www.politesi.polimi.it/handle/10589/144741).
 
 This repository contains the Kaiju source code together with a `docker-compose` file to launch a coupled Jaeger-Kaiju deployment.
+
+<p align="center"><img src="/deployment.png" alt="Deployment" width="600"></p>
 
 Kaiju-TSP communications:
 - port `2042`accepts incoming spans via TChannel from customized `jaeger-agent` (source code in folder `jaeger`)
